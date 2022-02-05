@@ -2,7 +2,7 @@
 name = "beverage"
 version = "0.1.0"
 authors = ["Alex Gill <email@alexfoxgill.com>"]
-edition = "2018"
+edition = "2021"
 resolver = "2"
 
 [lib]
@@ -14,12 +14,12 @@ wasm-bindgen = "0.2"
 rand = "0.8"
 getrandom = { version = "0.2", features = ["js"] }
 console_error_panic_hook = "0.1"
+bevy_ecs = "0.6"
 
 # Dependencies for native only.
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-bevy = { version = "0.5", default-features = false, features = ["bevy_wgpu", "bevy_winit", "render", "x11"] } 
+bevy = { version = "0.6", default-features = false, features = ["bevy_winit", "render", "x11"] } 
 
 # Dependencies for WASM only.
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-bevy = { version = "0.5", default-features = false, features = ["bevy_winit", "render"] }
-bevy_webgl2 = "0.5"
+bevy = { version = "0.6", default-features = false, features = ["bevy_winit", "render"] }
