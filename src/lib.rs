@@ -1,4 +1,4 @@
-use std::{collections::hash_map, iter, ops::Neg};
+use std::{collections::hash_map, iter};
 
 use bevy::{prelude::*, utils::HashMap};
 
@@ -134,15 +134,14 @@ fn setup(mut commands: Commands) {
 }
 
 fn hex_transform_sync(mut query: Query<(&HexPos, &mut Transform)>) {
-    for (&HexPos(pos), mut transform) in query.iter_mut() {
-        let (x, y) = pos.to_pixel(Spacing::FlatTop(40.0));
-        transform.translation = Vec3::new(x, -y, 0.0);
+    for (pos, mut transform) in query.iter_mut() {
+        transform.translation = pos.as_translation(Spacing::FlatTop(40.0));
     }
 }
 
 fn hex_rotation_sync(mut query: Query<(&Facing, &mut Transform)>) {
-    for (&Facing(dir), mut transform) in query.iter_mut() {
-        transform.rotation = Quat::from_rotation_z(-dir.to_radians_flat::<f32>());
+    for (dir, mut transform) in query.iter_mut() {
+        transform.rotation = dir.as_rotation();
     }
 }
 
@@ -186,6 +185,10 @@ impl Facing {
     pub fn rotate(&mut self, angle: Angle) {
         self.0 = self.0 + angle;
     }
+
+    pub fn as_rotation(&self) -> Quat {
+        Quat::from_rotation_z(-self.0.to_radians_flat::<f32>())
+    }
 }
 
 #[derive(Component)]
@@ -194,6 +197,11 @@ pub struct HexPos(Coordinate);
 impl HexPos {
     pub fn move_dir(&mut self, dir: HexDirection) {
         self.0 = self.0 + dir;
+    }
+
+    pub fn as_translation(&self, spacing: Spacing) -> Vec3 {
+        let (x, y) = self.0.to_pixel(spacing);
+        Vec3::new(x, -y, 0.0)
     }
 }
 
