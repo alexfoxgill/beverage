@@ -1,7 +1,8 @@
-use std::{collections::hash_map, iter};
+use std::{collections::hash_map, iter, time::Duration};
 
 use bevy::{prelude::*, utils::HashMap};
 
+use bevy_easings::{Ease, EaseFunction, EasingType, EasingsPlugin};
 use bevy_prototype_lyon::{prelude::*, shapes::Circle};
 use hex2d::{Direction as HexDirection, *};
 use rand::{prelude::SliceRandom, thread_rng};
@@ -12,6 +13,7 @@ pub fn run() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugin(ShapePlugin)
+        .add_plugin(EasingsPlugin)
         .add_plugin(GamePlugin)
         .run();
 }
@@ -24,13 +26,6 @@ impl Plugin for GamePlugin {
             .insert_resource(ClearColor(Color::rgb(0.9, 0.9, 0.9)))
             .add_startup_system(setup)
             .add_system(keyboard_input)
-            .add_stage_after(
-                CoreStage::Update,
-                "update_transform",
-                SystemStage::single_threaded(),
-            )
-            .add_system_to_stage("update_transform", hex_transform_sync)
-            .add_system_to_stage("update_transform", hex_rotation_sync)
             .add_system(bevy::input::system::exit_on_esc_system);
     }
 }
@@ -133,35 +128,46 @@ fn setup(mut commands: Commands) {
         });
 }
 
-fn hex_transform_sync(mut query: Query<(&HexPos, &mut Transform)>) {
-    for (pos, mut transform) in query.iter_mut() {
-        transform.translation = pos.as_translation(Spacing::FlatTop(40.0));
-    }
-}
-
-fn hex_rotation_sync(mut query: Query<(&Facing, &mut Transform)>) {
-    for (dir, mut transform) in query.iter_mut() {
-        transform.rotation = dir.as_rotation();
-    }
-}
-
 fn keyboard_input(
+    mut commands: Commands,
     keys: Res<Input<KeyCode>>,
-    mut query: Query<(&mut Facing, &mut HexPos), With<Player>>,
+    mut query: Query<(&mut Facing, &mut HexPos, &Transform, Entity), With<Player>>,
 ) {
-    let (mut facing, mut pos) = query.single_mut();
-    if keys.just_pressed(KeyCode::Left) {
-        facing.rotate_left();
-    }
-    if keys.just_pressed(KeyCode::Right) {
-        facing.rotate_right();
-    }
-    if keys.just_pressed(KeyCode::Up) {
+    let (mut facing, mut pos, transform, entity) = query.single_mut();
+    let init_transform = Transform {
+        rotation: facing.as_rotation(),
+        translation: pos.as_translation(Spacing::FlatTop(40.0)),
+        ..Default::default()
+    };
+    let (new_transform, ms) = if keys.just_pressed(KeyCode::Left) {
+        facing.rotate(Angle::Left);
+        (init_transform.with_rotation(facing.as_rotation()), 50)
+    } else if keys.just_pressed(KeyCode::Right) {
+        facing.rotate(Angle::Right);
+        (init_transform.with_rotation(facing.as_rotation()), 50)
+    } else if keys.just_pressed(KeyCode::Up) {
         pos.move_dir(facing.0);
-    }
-    if keys.just_pressed(KeyCode::Down) {
+        (
+            init_transform.with_translation(pos.as_translation(Spacing::FlatTop(40.0))),
+            200,
+        )
+    } else if keys.just_pressed(KeyCode::Down) {
         pos.move_dir(-facing.0);
-    }
+        (
+            init_transform.with_translation(pos.as_translation(Spacing::FlatTop(40.0))),
+            200,
+        )
+    } else {
+        return;
+    };
+
+    commands.entity(entity).insert(transform.ease_to(
+        new_transform,
+        EaseFunction::QuadraticInOut,
+        EasingType::Once {
+            duration: Duration::from_millis(ms),
+        },
+    ));
 }
 
 #[derive(Component)]
@@ -174,19 +180,12 @@ struct Player;
 struct Facing(HexDirection);
 
 impl Facing {
-    pub fn rotate_left(&mut self) {
-        self.rotate(Angle::Left);
-    }
-
-    pub fn rotate_right(&mut self) {
-        self.rotate(Angle::Right);
-    }
-
     pub fn rotate(&mut self, angle: Angle) {
         self.0 = self.0 + angle;
     }
 
     pub fn as_rotation(&self) -> Quat {
+        // the z-axis points towards the camera, so rotate a negative amount
         Quat::from_rotation_z(-self.0.to_radians_flat::<f32>())
     }
 }
@@ -201,6 +200,7 @@ impl HexPos {
 
     pub fn as_translation(&self, spacing: Spacing) -> Vec3 {
         let (x, y) = self.0.to_pixel(spacing);
+        // the y-axis points upward, so invert it
         Vec3::new(x, -y, 0.0)
     }
 }
