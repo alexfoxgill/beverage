@@ -30,11 +30,11 @@ impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(Msaa { samples: 4 })
             .insert_resource(ClearColor(Color::rgb(0.9, 0.9, 0.9)))
-            .add_event::<PlayerIntentionEvent>()
+            .add_event::<IntentionEvent>()
             .add_state(TurnState::PlayerTurn)
             .add_startup_system(setup)
             .add_system(keyboard_input.label("input"))
-            .add_system(player_movement.label("movement").after("input"))
+            .add_system(process_intention.label("process_intention").after("input"))
             .add_system(bevy::input::system::exit_on_esc_system);
     }
 }
@@ -137,41 +137,51 @@ fn setup(mut commands: Commands) {
         });
 }
 
-#[derive(Debug, PartialEq, Clone, Copy)]
-enum PlayerIntentionEvent {
+struct IntentionEvent(Entity, Intention);
+
+enum Intention {
     Rotate(Angle),
     Move(Angle),
 }
 
-fn keyboard_input(keys: Res<Input<KeyCode>>, mut ev_intention: EventWriter<PlayerIntentionEvent>) {
+fn keyboard_input(
+    keys: Res<Input<KeyCode>>,
+    get_player: Query<Entity, With<Player>>,
+    mut ev_intention: EventWriter<IntentionEvent>,
+) {
     if keys.just_pressed(KeyCode::Left) {
-        ev_intention.send(PlayerIntentionEvent::Rotate(Angle::Left));
+        let player = get_player.single();
+        ev_intention.send(IntentionEvent(player, Intention::Rotate(Angle::Left)));
     }
     if keys.just_pressed(KeyCode::Right) {
-        ev_intention.send(PlayerIntentionEvent::Rotate(Angle::Right));
+        let player = get_player.single();
+        ev_intention.send(IntentionEvent(player, Intention::Rotate(Angle::Right)));
     }
     if keys.just_pressed(KeyCode::Up) {
-        ev_intention.send(PlayerIntentionEvent::Move(Angle::Forward));
+        let player = get_player.single();
+        ev_intention.send(IntentionEvent(player, Intention::Move(Angle::Forward)));
     }
     if keys.just_pressed(KeyCode::Down) {
-        ev_intention.send(PlayerIntentionEvent::Move(Angle::Back));
+        let player = get_player.single();
+        ev_intention.send(IntentionEvent(player, Intention::Move(Angle::Back)));
     }
 }
 
-fn player_movement(
+fn process_intention(
     mut commands: Commands,
-    mut query: Query<(&mut Facing, &mut HexPos, &Transform, Entity), With<Player>>,
-    mut ev_intention: EventReader<PlayerIntentionEvent>,
+    mut query: Query<(&mut Facing, &mut HexPos, &Transform), With<Player>>,
+    mut ev_intention: EventReader<IntentionEvent>,
 ) {
-    let (mut facing, mut pos, transform, entity) = query.single_mut();
-    let init_transform = Transform {
-        rotation: facing.as_rotation(),
-        translation: pos.as_translation(Spacing::FlatTop(40.0)),
-        ..Default::default()
-    };
-    for ev in ev_intention.iter() {
-        let next_transform = match ev {
-            PlayerIntentionEvent::Rotate(angle) => {
+    for IntentionEvent(entity, intention) in ev_intention.iter() {
+        let (mut facing, mut pos, transform) = query.get_mut(*entity).unwrap();
+        let init_transform = Transform {
+            rotation: facing.as_rotation(),
+            translation: pos.as_translation(Spacing::FlatTop(40.0)),
+            ..Default::default()
+        };
+
+        let next_transform = match intention {
+            Intention::Rotate(angle) => {
                 facing.rotate(*angle);
                 transform.ease_to(
                     init_transform.with_rotation(facing.as_rotation()),
@@ -181,7 +191,7 @@ fn player_movement(
                     },
                 )
             }
-            PlayerIntentionEvent::Move(angle) => {
+            Intention::Move(angle) => {
                 pos.move_dir(facing.0 + *angle);
                 transform.ease_to(
                     init_transform.with_translation(pos.as_translation(Spacing::FlatTop(40.0))),
@@ -192,7 +202,7 @@ fn player_movement(
                 )
             }
         };
-        commands.entity(entity).insert(next_transform);
+        commands.entity(*entity).insert(next_transform);
     }
 }
 
