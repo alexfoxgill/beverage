@@ -7,7 +7,7 @@ use std::{
 use bevy::{prelude::*, utils::HashMap};
 
 use bevy_easings::{Ease, EaseFunction, EasingType, EasingsPlugin};
-use bevy_prototype_lyon::{prelude::*, shapes::Circle};
+use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*, shapes::Circle};
 use hex2d::{Direction as HexDirection, *};
 use rand::prelude::*;
 use wasm_bindgen::prelude::*;
@@ -119,18 +119,7 @@ fn setup(mut commands: Commands, mut turn_queue: ResMut<TurnQueue>) {
 
     // spawn player
     let player = commands
-        .spawn_bundle(PlayerBundle::default())
-        .insert_bundle(GeometryBuilder::build_as(
-            &Circle {
-                radius: 30.0,
-                center: Vec2::new(0.0, 0.0),
-            },
-            DrawMode::Outlined {
-                fill_mode: FillMode::color(Color::WHITE),
-                outline_mode: StrokeMode::new(Color::BLACK, 1.0),
-            },
-            Transform::default(),
-        ))
+        .spawn_bundle(ActorBundle::new_player(Coordinate::new(0, 0)))
         .with_children(|player| {
             player.spawn().insert_bundle(GeometryBuilder::build_as(
                 &shapes::Polygon {
@@ -145,11 +134,6 @@ fn setup(mut commands: Commands, mut turn_queue: ResMut<TurnQueue>) {
                 Transform::default(),
             ));
         })
-        .insert(Actor {
-            control_source: ControlSource::Player,
-            actions_per_turn: 2,
-            actions_remaining: 2,
-        })
         .id();
 
     turn_queue.queue.push_back(player);
@@ -159,25 +143,9 @@ fn setup(mut commands: Commands, mut turn_queue: ResMut<TurnQueue>) {
 }
 
 fn spawn_enemy(commands: &mut Commands, turn_queue: &mut TurnQueue, coordinate: Coordinate) {
-    let pos = HexPos(coordinate);
-    let facing = Facing(HexDirection::YX);
     let enemy = commands
         .spawn()
-        .insert_bundle(GeometryBuilder::build_as(
-            &Circle {
-                radius: 30.0,
-                center: Vec2::new(0.0, 0.0),
-            },
-            DrawMode::Outlined {
-                fill_mode: FillMode::color(Color::RED),
-                outline_mode: StrokeMode::new(Color::BLACK, 1.0),
-            },
-            Transform {
-                translation: pos.as_translation(Spacing::FlatTop(40.0)),
-                rotation: facing.as_rotation(),
-                ..Default::default()
-            },
-        ))
+        .insert_bundle(ActorBundle::new_enemy(coordinate))
         .with_children(|parent| {
             parent.spawn().insert_bundle(GeometryBuilder::build_as(
                 &shapes::Polygon {
@@ -191,13 +159,6 @@ fn spawn_enemy(commands: &mut Commands, turn_queue: &mut TurnQueue, coordinate: 
                 DrawMode::Fill(FillMode::color(Color::YELLOW)),
                 Transform::default(),
             ));
-        })
-        .insert(facing)
-        .insert(pos)
-        .insert(Actor {
-            control_source: ControlSource::AI,
-            actions_per_turn: 1,
-            actions_remaining: 1,
         })
         .id();
 
@@ -379,10 +340,74 @@ impl Default for Facing {
     }
 }
 
-#[derive(Bundle, Default)]
-struct PlayerBundle {
+#[derive(Bundle)]
+struct ActorBundle {
     facing: Facing,
     pos: HexPos,
+    actor: Actor,
+
+    #[bundle]
+    shape: ShapeBundle,
+}
+
+impl ActorBundle {
+    fn new_player(coord: Coordinate) -> ActorBundle {
+        let facing = Facing::default();
+        let pos = HexPos(coord);
+        let shape = GeometryBuilder::build_as(
+            &Circle {
+                radius: 30.0,
+                center: Vec2::new(0.0, 0.0),
+            },
+            DrawMode::Outlined {
+                fill_mode: FillMode::color(Color::WHITE),
+                outline_mode: StrokeMode::new(Color::BLACK, 1.0),
+            },
+            Transform::default().with_translation(pos.as_translation(Spacing::FlatTop(40.0))),
+        );
+
+        let actor = Actor {
+            control_source: ControlSource::Player,
+            actions_per_turn: 2,
+            actions_remaining: 2,
+        };
+
+        ActorBundle {
+            facing,
+            pos,
+            shape,
+            actor,
+        }
+    }
+
+    fn new_enemy(coord: Coordinate) -> ActorBundle {
+        let facing = Facing::default();
+        let pos = HexPos(coord);
+        let shape = GeometryBuilder::build_as(
+            &Circle {
+                radius: 30.0,
+                center: Vec2::new(0.0, 0.0),
+            },
+            DrawMode::Outlined {
+                fill_mode: FillMode::color(Color::RED),
+                outline_mode: StrokeMode::new(Color::BLACK, 1.0),
+            },
+            Transform::default().with_translation(pos.as_translation(Spacing::FlatTop(40.0))),
+        );
+
+        let actor = Actor {
+            control_source: ControlSource::AI,
+            actions_per_turn: 1,
+            actions_remaining: 1,
+        };
+
+        ActorBundle {
+            facing,
+            pos,
+            shape,
+            actor,
+        }
+    }
 }
 
 #[derive(Debug, PartialEq, Clone, Copy, Component)]
