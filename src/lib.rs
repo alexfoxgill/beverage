@@ -121,18 +121,7 @@ fn setup(mut commands: Commands, mut turn_queue: ResMut<TurnQueue>) {
     let player = commands
         .spawn_bundle(ActorBundle::new_player(Coordinate::new(0, 0)))
         .with_children(|player| {
-            player.spawn().insert_bundle(GeometryBuilder::build_as(
-                &shapes::Polygon {
-                    points: vec![
-                        Vec2::new(-15.0, 30.0),
-                        Vec2::new(0.0, 45.0),
-                        Vec2::new(15.0, 30.0),
-                    ],
-                    closed: true,
-                },
-                DrawMode::Fill(FillMode::color(Color::YELLOW)),
-                Transform::default(),
-            ));
+            player.spawn_bundle(direction_indicator());
         })
         .id();
 
@@ -144,21 +133,9 @@ fn setup(mut commands: Commands, mut turn_queue: ResMut<TurnQueue>) {
 
 fn spawn_enemy(commands: &mut Commands, turn_queue: &mut TurnQueue, coordinate: Coordinate) {
     let enemy = commands
-        .spawn()
-        .insert_bundle(ActorBundle::new_enemy(coordinate))
+        .spawn_bundle(ActorBundle::new_enemy(coordinate))
         .with_children(|parent| {
-            parent.spawn().insert_bundle(GeometryBuilder::build_as(
-                &shapes::Polygon {
-                    points: vec![
-                        Vec2::new(-15.0, 30.0),
-                        Vec2::new(0.0, 45.0),
-                        Vec2::new(15.0, 30.0),
-                    ],
-                    closed: true,
-                },
-                DrawMode::Fill(FillMode::color(Color::YELLOW)),
-                Transform::default(),
-            ));
+            parent.spawn_bundle(direction_indicator());
         })
         .id();
 
@@ -338,6 +315,21 @@ impl Default for Facing {
     fn default() -> Self {
         Self(HexDirection::YZ)
     }
+}
+
+fn direction_indicator() -> ShapeBundle {
+    GeometryBuilder::build_as(
+        &shapes::Polygon {
+            points: vec![
+                Vec2::new(-15.0, 30.0),
+                Vec2::new(0.0, 45.0),
+                Vec2::new(15.0, 30.0),
+            ],
+            closed: true,
+        },
+        DrawMode::Fill(FillMode::color(Color::YELLOW)),
+        Transform::default(),
+    )
 }
 
 #[derive(Bundle)]
