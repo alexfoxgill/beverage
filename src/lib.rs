@@ -335,9 +335,6 @@ fn process_actions(mut query: Query<&mut Actor>, mut turn_queue: ResMut<TurnQueu
 #[derive(Component)]
 struct Map;
 
-#[derive(Component, Default)]
-struct Player;
-
 #[derive(Component)]
 struct Facing(HexDirection);
 
@@ -384,7 +381,6 @@ impl Default for Facing {
 
 #[derive(Bundle, Default)]
 struct PlayerBundle {
-    player: Player,
     facing: Facing,
     pos: HexPos,
 }
