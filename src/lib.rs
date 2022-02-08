@@ -18,14 +18,23 @@ pub fn run() {
         .run();
 }
 
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Copy)]
+enum TurnState {
+    PlayerTurn,
+    EnemyTurn,
+}
+
 pub struct GamePlugin;
 
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(Msaa { samples: 4 })
             .insert_resource(ClearColor(Color::rgb(0.9, 0.9, 0.9)))
+            .add_event::<PlayerIntentionEvent>()
+            .add_state(TurnState::PlayerTurn)
             .add_startup_system(setup)
-            .add_system(keyboard_input)
+            .add_system(keyboard_input.label("input"))
+            .add_system(player_movement.label("movement").after("input"))
             .add_system(bevy::input::system::exit_on_esc_system);
     }
 }
@@ -128,10 +137,31 @@ fn setup(mut commands: Commands) {
         });
 }
 
-fn keyboard_input(
+#[derive(Debug, PartialEq, Clone, Copy)]
+enum PlayerIntentionEvent {
+    Rotate(Angle),
+    Move(Angle),
+}
+
+fn keyboard_input(keys: Res<Input<KeyCode>>, mut ev_intention: EventWriter<PlayerIntentionEvent>) {
+    if keys.just_pressed(KeyCode::Left) {
+        ev_intention.send(PlayerIntentionEvent::Rotate(Angle::Left));
+    }
+    if keys.just_pressed(KeyCode::Right) {
+        ev_intention.send(PlayerIntentionEvent::Rotate(Angle::Right));
+    }
+    if keys.just_pressed(KeyCode::Up) {
+        ev_intention.send(PlayerIntentionEvent::Move(Angle::Forward));
+    }
+    if keys.just_pressed(KeyCode::Down) {
+        ev_intention.send(PlayerIntentionEvent::Move(Angle::Back));
+    }
+}
+
+fn player_movement(
     mut commands: Commands,
-    keys: Res<Input<KeyCode>>,
     mut query: Query<(&mut Facing, &mut HexPos, &Transform, Entity), With<Player>>,
+    mut ev_intention: EventReader<PlayerIntentionEvent>,
 ) {
     let (mut facing, mut pos, transform, entity) = query.single_mut();
     let init_transform = Transform {
@@ -139,35 +169,31 @@ fn keyboard_input(
         translation: pos.as_translation(Spacing::FlatTop(40.0)),
         ..Default::default()
     };
-    let (new_transform, ms) = if keys.just_pressed(KeyCode::Left) {
-        facing.rotate(Angle::Left);
-        (init_transform.with_rotation(facing.as_rotation()), 50)
-    } else if keys.just_pressed(KeyCode::Right) {
-        facing.rotate(Angle::Right);
-        (init_transform.with_rotation(facing.as_rotation()), 50)
-    } else if keys.just_pressed(KeyCode::Up) {
-        pos.move_dir(facing.0);
-        (
-            init_transform.with_translation(pos.as_translation(Spacing::FlatTop(40.0))),
-            200,
-        )
-    } else if keys.just_pressed(KeyCode::Down) {
-        pos.move_dir(-facing.0);
-        (
-            init_transform.with_translation(pos.as_translation(Spacing::FlatTop(40.0))),
-            200,
-        )
-    } else {
-        return;
-    };
-
-    commands.entity(entity).insert(transform.ease_to(
-        new_transform,
-        EaseFunction::QuadraticInOut,
-        EasingType::Once {
-            duration: Duration::from_millis(ms),
-        },
-    ));
+    for ev in ev_intention.iter() {
+        let next_transform = match ev {
+            PlayerIntentionEvent::Rotate(angle) => {
+                facing.rotate(*angle);
+                transform.ease_to(
+                    init_transform.with_rotation(facing.as_rotation()),
+                    EaseFunction::QuadraticInOut,
+                    EasingType::Once {
+                        duration: Duration::from_millis(50),
+                    },
+                )
+            }
+            PlayerIntentionEvent::Move(angle) => {
+                pos.move_dir(facing.0 + *angle);
+                transform.ease_to(
+                    init_transform.with_translation(pos.as_translation(Spacing::FlatTop(40.0))),
+                    EaseFunction::QuadraticInOut,
+                    EasingType::Once {
+                        duration: Duration::from_millis(200),
+                    },
+                )
+            }
+        };
+        commands.entity(entity).insert(next_transform);
+    }
 }
 
 #[derive(Component)]
