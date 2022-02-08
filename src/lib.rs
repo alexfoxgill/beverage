@@ -147,15 +147,19 @@ fn setup(mut commands: Commands, mut turn_queue: ResMut<TurnQueue>) {
         })
         .insert(Actor {
             control_source: ControlSource::Player,
-            actions_per_turn: 1,
-            actions_remaining: 1,
+            actions_per_turn: 2,
+            actions_remaining: 2,
         })
         .id();
 
     turn_queue.queue.push_back(player);
 
-    // spawn enemy
-    let pos = HexPos(Coordinate::new(2, 2));
+    spawn_enemy(&mut commands, &mut turn_queue, Coordinate::new(2, 2));
+    spawn_enemy(&mut commands, &mut turn_queue, Coordinate::new(-2, -2));
+}
+
+fn spawn_enemy(commands: &mut Commands, turn_queue: &mut TurnQueue, coordinate: Coordinate) {
+    let pos = HexPos(coordinate);
     let facing = Facing(HexDirection::YX);
     let enemy = commands
         .spawn()
