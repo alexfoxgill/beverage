@@ -1,11 +1,15 @@
-use std::{collections::hash_map, iter, time::Duration};
+use std::{
+    collections::{hash_map, VecDeque},
+    iter,
+    time::Duration,
+};
 
 use bevy::{prelude::*, utils::HashMap};
 
 use bevy_easings::{Ease, EaseFunction, EasingType, EasingsPlugin};
 use bevy_prototype_lyon::{prelude::*, shapes::Circle};
 use hex2d::{Direction as HexDirection, *};
-use rand::{prelude::SliceRandom, thread_rng};
+use rand::prelude::*;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -18,12 +22,6 @@ pub fn run() {
         .run();
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash, Copy)]
-enum TurnState {
-    PlayerTurn,
-    EnemyTurn,
-}
-
 pub struct GamePlugin;
 
 impl Plugin for GamePlugin {
@@ -31,10 +29,20 @@ impl Plugin for GamePlugin {
         app.insert_resource(Msaa { samples: 4 })
             .insert_resource(ClearColor(Color::rgb(0.9, 0.9, 0.9)))
             .add_event::<IntentionEvent>()
-            .add_state(TurnState::PlayerTurn)
+            .init_resource::<TurnQueue>()
             .add_startup_system(setup)
-            .add_system(keyboard_input.label("input"))
-            .add_system(process_intention.label("process_intention").after("input"))
+            .add_system(ingame_keyboard_input.label("produce_intention"))
+            .add_system(generate_ai_intentions.label("produce_intention"))
+            .add_system(
+                process_intention
+                    .label("process_intention")
+                    .after("produce_intention"),
+            )
+            .add_system(
+                process_actions
+                    .label("process_actions")
+                    .after("process_intention"),
+            )
             .add_system(bevy::input::system::exit_on_esc_system);
     }
 }
@@ -76,11 +84,12 @@ impl<T> Extend<(Coordinate, T)> for HexMap<T> {
     }
 }
 
-fn setup(mut commands: Commands) {
+fn setup(mut commands: Commands, mut turn_queue: ResMut<TurnQueue>) {
     // cameras
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
     commands.spawn_bundle(UiCameraBundle::default());
 
+    // spawn map
     let center: Coordinate<i32> = Coordinate::new(0, 0);
     let tiles = (1..5)
         .flat_map(|i| center.ring_iter(i, Spin::CW(XY)))
@@ -108,7 +117,8 @@ fn setup(mut commands: Commands) {
         }
     });
 
-    commands
+    // spawn player
+    let player = commands
         .spawn_bundle(PlayerBundle::default())
         .insert_bundle(GeometryBuilder::build_as(
             &Circle {
@@ -116,7 +126,7 @@ fn setup(mut commands: Commands) {
                 center: Vec2::new(0.0, 0.0),
             },
             DrawMode::Outlined {
-                fill_mode: FillMode::color(Color::rgba(0.0, 0.0, 0.0, 0.0)),
+                fill_mode: FillMode::color(Color::WHITE),
                 outline_mode: StrokeMode::new(Color::BLACK, 1.0),
             },
             Transform::default(),
@@ -125,16 +135,87 @@ fn setup(mut commands: Commands) {
             player.spawn().insert_bundle(GeometryBuilder::build_as(
                 &shapes::Polygon {
                     points: vec![
-                        Vec2::new(-15.0, 0.0),
-                        Vec2::new(0.0, 15.0),
-                        Vec2::new(15.0, 0.0),
+                        Vec2::new(-15.0, 30.0),
+                        Vec2::new(0.0, 45.0),
+                        Vec2::new(15.0, 30.0),
                     ],
                     closed: true,
                 },
                 DrawMode::Fill(FillMode::color(Color::YELLOW)),
-                Transform::from_translation(Vec3::new(0.0, 30.0, 0.0)),
+                Transform::default(),
             ));
-        });
+        })
+        .insert(Actor {
+            control_source: ControlSource::Player,
+            actions_per_turn: 1,
+            actions_remaining: 1,
+        })
+        .id();
+
+    turn_queue.queue.push_back(player);
+
+    // spawn enemy
+    let pos = HexPos(Coordinate::new(2, 2));
+    let facing = Facing(HexDirection::YX);
+    let enemy = commands
+        .spawn()
+        .insert_bundle(GeometryBuilder::build_as(
+            &Circle {
+                radius: 30.0,
+                center: Vec2::new(0.0, 0.0),
+            },
+            DrawMode::Outlined {
+                fill_mode: FillMode::color(Color::RED),
+                outline_mode: StrokeMode::new(Color::BLACK, 1.0),
+            },
+            Transform {
+                translation: pos.as_translation(Spacing::FlatTop(40.0)),
+                rotation: facing.as_rotation(),
+                ..Default::default()
+            },
+        ))
+        .with_children(|parent| {
+            parent.spawn().insert_bundle(GeometryBuilder::build_as(
+                &shapes::Polygon {
+                    points: vec![
+                        Vec2::new(-15.0, 30.0),
+                        Vec2::new(0.0, 45.0),
+                        Vec2::new(15.0, 30.0),
+                    ],
+                    closed: true,
+                },
+                DrawMode::Fill(FillMode::color(Color::YELLOW)),
+                Transform::default(),
+            ));
+        })
+        .insert(facing)
+        .insert(pos)
+        .insert(Actor {
+            control_source: ControlSource::AI,
+            actions_per_turn: 1,
+            actions_remaining: 1,
+        })
+        .id();
+
+    turn_queue.queue.push_back(enemy);
+}
+
+#[derive(Default)]
+struct TurnQueue {
+    queue: VecDeque<Entity>,
+}
+
+#[derive(Debug, PartialEq, Clone, Copy)]
+enum ControlSource {
+    Player,
+    AI,
+}
+
+#[derive(Component)]
+struct Actor {
+    control_source: ControlSource,
+    actions_per_turn: i32,
+    actions_remaining: i32,
 }
 
 struct IntentionEvent(Entity, Intention);
@@ -142,67 +223,108 @@ struct IntentionEvent(Entity, Intention);
 enum Intention {
     Rotate(Angle),
     Move(Angle),
+    EndTurn,
 }
 
-fn keyboard_input(
+fn ingame_keyboard_input(
     keys: Res<Input<KeyCode>>,
-    get_player: Query<Entity, With<Player>>,
+    actors: Query<&Actor>,
+    turn_queue: Res<TurnQueue>,
     mut ev_intention: EventWriter<IntentionEvent>,
 ) {
-    if keys.just_pressed(KeyCode::Left) {
-        let player = get_player.single();
-        ev_intention.send(IntentionEvent(player, Intention::Rotate(Angle::Left)));
+    if let Some(&entity) = turn_queue.queue.front() {
+        if let Ok(actor) = actors.get(entity) {
+            if actor.control_source == ControlSource::Player {
+                if keys.just_pressed(KeyCode::Left) {
+                    ev_intention.send(IntentionEvent(entity, Intention::Rotate(Angle::Left)));
+                }
+                if keys.just_pressed(KeyCode::Right) {
+                    ev_intention.send(IntentionEvent(entity, Intention::Rotate(Angle::Right)));
+                }
+                if keys.just_pressed(KeyCode::Up) {
+                    ev_intention.send(IntentionEvent(entity, Intention::Move(Angle::Forward)));
+                }
+                if keys.just_pressed(KeyCode::Down) {
+                    ev_intention.send(IntentionEvent(entity, Intention::Move(Angle::Back)));
+                }
+                if keys.just_pressed(KeyCode::E) {
+                    ev_intention.send(IntentionEvent(entity, Intention::EndTurn));
+                }
+            }
+        }
     }
-    if keys.just_pressed(KeyCode::Right) {
-        let player = get_player.single();
-        ev_intention.send(IntentionEvent(player, Intention::Rotate(Angle::Right)));
-    }
-    if keys.just_pressed(KeyCode::Up) {
-        let player = get_player.single();
-        ev_intention.send(IntentionEvent(player, Intention::Move(Angle::Forward)));
-    }
-    if keys.just_pressed(KeyCode::Down) {
-        let player = get_player.single();
-        ev_intention.send(IntentionEvent(player, Intention::Move(Angle::Back)));
+}
+
+fn generate_ai_intentions(
+    actors: Query<(&HexPos, &Facing, &Actor)>,
+    turn_queue: Res<TurnQueue>,
+    mut ev_intention: EventWriter<IntentionEvent>,
+) {
+    if let Some(&entity) = turn_queue.queue.front() {
+        if let Ok((_, _, actor)) = actors.get(entity) {
+            if actor.control_source == ControlSource::AI {
+                let rotation = Angle::from_int(rand::thread_rng().gen_range(1..=6));
+
+                ev_intention.send(IntentionEvent(entity, Intention::Rotate(rotation)));
+                ev_intention.send(IntentionEvent(entity, Intention::Move(Angle::Forward)));
+            }
+        }
     }
 }
 
 fn process_intention(
     mut commands: Commands,
-    mut query: Query<(&mut Facing, &mut HexPos, &Transform), With<Player>>,
+    mut query: Query<(&mut Facing, &mut HexPos, &mut Actor, &Transform)>,
     mut ev_intention: EventReader<IntentionEvent>,
 ) {
     for IntentionEvent(entity, intention) in ev_intention.iter() {
-        let (mut facing, mut pos, transform) = query.get_mut(*entity).unwrap();
+        let (mut facing, mut pos, mut actor, transform) = query.get_mut(*entity).unwrap();
         let init_transform = Transform {
             rotation: facing.as_rotation(),
             translation: pos.as_translation(Spacing::FlatTop(40.0)),
             ..Default::default()
         };
 
-        let next_transform = match intention {
+        match intention {
             Intention::Rotate(angle) => {
                 facing.rotate(*angle);
-                transform.ease_to(
+                commands.entity(*entity).insert(transform.ease_to(
                     init_transform.with_rotation(facing.as_rotation()),
                     EaseFunction::QuadraticInOut,
                     EasingType::Once {
                         duration: Duration::from_millis(50),
                     },
-                )
+                ));
             }
             Intention::Move(angle) => {
+                actor.actions_remaining -= 1;
                 pos.move_dir(facing.0 + *angle);
-                transform.ease_to(
+                commands.entity(*entity).insert(transform.ease_to(
                     init_transform.with_translation(pos.as_translation(Spacing::FlatTop(40.0))),
                     EaseFunction::QuadraticInOut,
                     EasingType::Once {
                         duration: Duration::from_millis(200),
                     },
-                )
+                ));
             }
-        };
-        commands.entity(*entity).insert(next_transform);
+            Intention::EndTurn => {
+                actor.actions_remaining = 0;
+            }
+        }
+    }
+}
+
+fn process_actions(mut query: Query<&mut Actor>, mut turn_queue: ResMut<TurnQueue>) {
+    if let Some(&entity) = turn_queue.queue.front() {
+        if let Ok(mut actor) = query.get_mut(entity) {
+            if actor.actions_remaining == 0 {
+                actor.actions_remaining = actor.actions_per_turn;
+                turn_queue.queue.pop_front();
+                turn_queue.queue.push_back(entity);
+            }
+        } else {
+            turn_queue.queue.pop_front();
+        }
     }
 }
 
