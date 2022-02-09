@@ -165,6 +165,7 @@ struct IntentionEvent(Entity, Intention);
 enum Intention {
     Rotate(Angle),
     Move(Angle),
+    Attack(Angle),
     EndTurn,
 }
 
@@ -192,6 +193,9 @@ fn ingame_keyboard_input(
                 if keys.just_pressed(KeyCode::E) {
                     ev_intention.send(IntentionEvent(entity, Intention::EndTurn));
                 }
+                if keys.just_pressed(KeyCode::Space) {
+                    ev_intention.send(IntentionEvent(entity, Intention::Attack(Angle::Forward)));
+                }
             }
         }
     }
@@ -216,11 +220,11 @@ fn generate_ai_intentions(
 
 fn process_intention(
     mut commands: Commands,
-    mut query: Query<(&mut Facing, &mut HexPos, &mut Actor, &Transform)>,
+    mut actors: Query<(&mut Facing, &mut HexPos, &mut Actor, &Transform, Entity)>,
     mut ev_intention: EventReader<IntentionEvent>,
 ) {
     for IntentionEvent(entity, intention) in ev_intention.iter() {
-        let (mut facing, mut pos, mut actor, transform) = query.get_mut(*entity).unwrap();
+        let (mut facing, mut pos, mut actor, transform, _) = actors.get_mut(*entity).unwrap();
         let init_transform = Transform {
             rotation: facing.as_rotation(),
             translation: pos.as_translation(Spacing::FlatTop(40.0)),
@@ -240,7 +244,7 @@ fn process_intention(
             }
             Intention::Move(angle) => {
                 actor.actions_remaining -= 1;
-                pos.move_dir(facing.0 + *angle);
+                pos.move_facing(facing.rotated(*angle));
                 commands.entity(*entity).insert(transform.ease_to(
                     init_transform.with_translation(pos.as_translation(Spacing::FlatTop(40.0))),
                     EaseFunction::QuadraticInOut,
@@ -251,6 +255,15 @@ fn process_intention(
             }
             Intention::EndTurn => {
                 actor.actions_remaining = 0;
+            }
+            Intention::Attack(angle) => {
+                let direction = facing.rotated(*angle);
+                let coord_to_attack = pos.get_facing(direction);
+                for (_, pos, _, _, e) in actors.iter() {
+                    if pos.0 == coord_to_attack {
+                        commands.entity(e).despawn_recursive();
+                    }
+                }
             }
         }
     }
@@ -277,8 +290,12 @@ struct Map;
 struct Facing(HexDirection);
 
 impl Facing {
+    pub fn rotated(&self, angle: Angle) -> HexDirection {
+        self.0 + angle
+    }
+
     pub fn rotate(&mut self, angle: Angle) {
-        self.0 = self.0 + angle;
+        self.0 = self.rotated(angle);
     }
 
     pub fn as_rotation(&self) -> Quat {
@@ -291,8 +308,12 @@ impl Facing {
 pub struct HexPos(Coordinate);
 
 impl HexPos {
-    pub fn move_dir(&mut self, dir: HexDirection) {
-        self.0 = self.0 + dir;
+    pub fn get_facing(&self, dir: HexDirection) -> Coordinate {
+        self.0 + dir
+    }
+
+    pub fn move_facing(&mut self, dir: HexDirection) {
+        self.0 = self.get_facing(dir);
     }
 
     pub fn as_translation(&self, spacing: Spacing) -> Vec3 {
