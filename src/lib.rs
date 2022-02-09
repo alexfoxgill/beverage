@@ -47,6 +47,8 @@ impl Plugin for GamePlugin {
     }
 }
 
+const HEX_SPACING: Spacing = Spacing::FlatTop(40.0);
+
 #[derive(Debug, PartialEq, Clone)]
 pub struct HexMap<T> {
     map: HashMap<Coordinate, T>,
@@ -97,7 +99,7 @@ fn setup(mut commands: Commands, mut turn_queue: ResMut<TurnQueue>) {
         .map(|x| (x, Terrain::random()));
     let map = HexMap::from_iter(tiles);
 
-    commands.spawn().insert(Map).with_children(|parent| {
+    commands.spawn().with_children(|parent| {
         for (&c, &t) in map.iter() {
             let color = match t {
                 Terrain::Grass => Color::OLIVE,
@@ -227,7 +229,7 @@ fn process_intention(
         let (mut facing, mut pos, mut actor, transform, _) = actors.get_mut(*entity).unwrap();
         let init_transform = Transform {
             rotation: facing.as_rotation(),
-            translation: pos.as_translation(Spacing::FlatTop(40.0)),
+            translation: pos.as_translation(HEX_SPACING),
             ..Default::default()
         };
 
@@ -246,7 +248,7 @@ fn process_intention(
                 actor.actions_remaining -= 1;
                 pos.move_facing(facing.rotated(*angle));
                 commands.entity(*entity).insert(transform.ease_to(
-                    init_transform.with_translation(pos.as_translation(Spacing::FlatTop(40.0))),
+                    init_transform.with_translation(pos.as_translation(HEX_SPACING)),
                     EaseFunction::QuadraticInOut,
                     EasingType::Once {
                         duration: Duration::from_millis(200),
@@ -282,9 +284,6 @@ fn process_actions(mut query: Query<&mut Actor>, mut turn_queue: ResMut<TurnQueu
         }
     }
 }
-
-#[derive(Component)]
-struct Map;
 
 #[derive(Component)]
 struct Facing(HexDirection);
@@ -376,7 +375,7 @@ impl ActorBundle {
                 fill_mode: FillMode::color(Color::WHITE),
                 outline_mode: StrokeMode::new(Color::BLACK, 1.0),
             },
-            Transform::default().with_translation(pos.as_translation(Spacing::FlatTop(40.0))),
+            Transform::default().with_translation(pos.as_translation(HEX_SPACING)),
         );
 
         let actor = Actor {
@@ -405,7 +404,7 @@ impl ActorBundle {
                 fill_mode: FillMode::color(Color::RED),
                 outline_mode: StrokeMode::new(Color::BLACK, 1.0),
             },
-            Transform::default().with_translation(pos.as_translation(Spacing::FlatTop(40.0))),
+            Transform::default().with_translation(pos.as_translation(HEX_SPACING)),
         );
 
         let actor = Actor {
@@ -437,7 +436,7 @@ impl Terrain {
 }
 
 fn make_hex(coord: Coordinate) -> RegularPolygon {
-    let (x, y) = coord.to_pixel(Spacing::FlatTop(40.0));
+    let (x, y) = coord.to_pixel(HEX_SPACING);
     RegularPolygon {
         sides: 6,
         feature: RegularPolygonFeature::Radius(40.0),
