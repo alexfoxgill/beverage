@@ -210,6 +210,12 @@ pub struct MoveAction {
     to: Coordinate,
 }
 
+impl MoveAction {
+    pub fn event(entity: Entity, to: Coordinate) -> ActionEvent {
+        ActionEvent(Box::new(MoveAction { entity, to }))
+    }
+}
+
 impl Action for MoveAction {
     fn entity(&self) -> Entity {
         self.entity
@@ -227,6 +233,12 @@ impl Action for MoveAction {
 pub struct RotateAction {
     entity: Entity,
     to: HexDirection,
+}
+
+impl RotateAction {
+    pub fn event(entity: Entity, to: HexDirection) -> ActionEvent {
+        ActionEvent(Box::new(RotateAction { entity, to }))
+    }
 }
 
 impl Action for RotateAction {
@@ -247,6 +259,12 @@ pub struct EndTurnAction {
     entity: Entity,
 }
 
+impl EndTurnAction {
+    pub fn event(entity: Entity) -> ActionEvent {
+        ActionEvent(Box::new(EndTurnAction { entity }))
+    }
+}
+
 impl Action for EndTurnAction {
     fn entity(&self) -> Entity {
         self.entity
@@ -264,6 +282,12 @@ impl Action for EndTurnAction {
 pub struct AttackAction {
     attacker: Entity,
     victim: Entity,
+}
+
+impl AttackAction {
+    pub fn event(attacker: Entity, victim: Entity) -> ActionEvent {
+        ActionEvent(Box::new(AttackAction { attacker, victim }))
+    }
 }
 
 impl Action for AttackAction {
@@ -395,31 +419,22 @@ fn process_intention(
         match intention {
             Intention::Rotate(angle) => {
                 let target = facing.rotated(*angle);
-                ev_action.send(ActionEvent(Box::new(RotateAction {
-                    entity: *entity,
-                    to: target,
-                })));
+                ev_action.send(RotateAction::event(*entity, target));
             }
             Intention::Move(angle) => {
                 let dir = facing.rotated(*angle);
                 let target = pos.get_facing(dir);
-                ev_action.send(ActionEvent(Box::new(MoveAction {
-                    entity: *entity,
-                    to: target,
-                })));
+                ev_action.send(MoveAction::event(*entity, target));
             }
             Intention::EndTurn => {
-                ev_action.send(ActionEvent(Box::new(EndTurnAction { entity: *entity })));
+                ev_action.send(EndTurnAction::event(*entity));
             }
             Intention::Attack(angle) => {
                 let direction = facing.rotated(*angle);
                 let coord_to_attack = pos.get_facing(direction);
                 for (_, pos, e) in actors.iter() {
                     if pos.0 == coord_to_attack {
-                        ev_action.send(ActionEvent(Box::new(AttackAction {
-                            attacker: *entity,
-                            victim: e,
-                        })));
+                        ev_action.send(AttackAction::event(*entity, e));
                     }
                 }
             }
