@@ -29,6 +29,7 @@ impl Plugin for GamePlugin {
         app.insert_resource(Msaa { samples: 4 })
             .insert_resource(ClearColor(Color::rgb(0.9, 0.9, 0.9)))
             .add_event::<IntentionEvent>()
+            .add_event::<ActionEvent>()
             .init_resource::<TurnQueue>()
             .add_startup_system(setup)
             .add_system(ingame_keyboard_input.label("produce_intention"))
@@ -39,9 +40,14 @@ impl Plugin for GamePlugin {
                     .after("produce_intention"),
             )
             .add_system(
-                process_actions
-                    .label("process_actions")
+                process_action_events
+                    .label("process_action_events")
                     .after("process_intention"),
+            )
+            .add_system(
+                cycle_turn_queue
+                    .label("process_actions")
+                    .after("process_action_events"),
             )
             .add_system(bevy::input::system::exit_on_esc_system);
     }
@@ -144,6 +150,164 @@ fn spawn_enemy(commands: &mut Commands, turn_queue: &mut TurnQueue, coordinate: 
     turn_queue.queue.push_back(enemy);
 }
 
+fn process_action_events(
+    mut commands: Commands,
+    mut actors: Query<(&mut Actor, &mut HexPos, &mut Facing, &mut Transform)>,
+    mut events: EventReader<ActionEvent>,
+) {
+    for action in events.iter() {
+        if let Ok((mut actor, mut pos, mut facing, transform)) = actors.get_mut(action.entity()) {
+            match action.cost() {
+                ActionCost::All => actor.actions_remaining = 0,
+                ActionCost::Fixed(x) => actor.actions_remaining -= x,
+                ActionCost::None => (),
+            }
+
+            let init_transform = Transform {
+                rotation: facing.as_rotation(),
+                translation: pos.as_translation(HEX_SPACING),
+                ..Default::default()
+            };
+            for effect in action.effects().iter() {
+                match effect {
+                    Effect::Move(e, to) => {
+                        pos.0 = *to;
+                        commands.entity(*e).insert(transform.ease_to(
+                            init_transform.with_translation(pos.as_translation(HEX_SPACING)),
+                            EaseFunction::QuadraticInOut,
+                            EasingType::Once {
+                                duration: Duration::from_millis(200),
+                            },
+                        ));
+                    }
+                    Effect::Rotate(e, to) => {
+                        facing.0 = *to;
+                        commands.entity(*e).insert(transform.ease_to(
+                            init_transform.with_rotation(facing.as_rotation()),
+                            EaseFunction::QuadraticInOut,
+                            EasingType::Once {
+                                duration: Duration::from_millis(50),
+                            },
+                        ));
+                    }
+                    Effect::Die(e) => {
+                        commands.entity(*e).despawn_recursive();
+                    }
+                }
+            }
+        }
+    }
+}
+
+pub trait Action: Send + Sync {
+    fn entity(&self) -> Entity;
+    fn cost(&self) -> ActionCost;
+    fn effects(&self) -> Vec<Effect>;
+}
+
+pub struct MoveAction {
+    entity: Entity,
+    to: Coordinate,
+}
+
+impl Action for MoveAction {
+    fn entity(&self) -> Entity {
+        self.entity
+    }
+
+    fn cost(&self) -> ActionCost {
+        ActionCost::Fixed(1)
+    }
+
+    fn effects(&self) -> Vec<Effect> {
+        vec![Effect::Move(self.entity, self.to)]
+    }
+}
+
+pub struct RotateAction {
+    entity: Entity,
+    to: HexDirection,
+}
+
+impl Action for RotateAction {
+    fn entity(&self) -> Entity {
+        self.entity
+    }
+
+    fn cost(&self) -> ActionCost {
+        ActionCost::None
+    }
+
+    fn effects(&self) -> Vec<Effect> {
+        vec![Effect::Rotate(self.entity, self.to)]
+    }
+}
+
+pub struct EndTurnAction {
+    entity: Entity,
+}
+
+impl Action for EndTurnAction {
+    fn entity(&self) -> Entity {
+        self.entity
+    }
+
+    fn cost(&self) -> ActionCost {
+        ActionCost::All
+    }
+
+    fn effects(&self) -> Vec<Effect> {
+        vec![]
+    }
+}
+
+pub struct AttackAction {
+    attacker: Entity,
+    victim: Entity,
+}
+
+impl Action for AttackAction {
+    fn entity(&self) -> Entity {
+        self.attacker
+    }
+
+    fn cost(&self) -> ActionCost {
+        ActionCost::All
+    }
+
+    fn effects(&self) -> Vec<Effect> {
+        vec![Effect::Die(self.victim)]
+    }
+}
+
+pub enum Effect {
+    Move(Entity, Coordinate),
+    Rotate(Entity, HexDirection),
+    Die(Entity),
+}
+
+pub enum ActionCost {
+    All,
+    Fixed(u8),
+    None,
+}
+
+pub struct ActionEvent(Box<dyn Action>);
+
+impl Action for ActionEvent {
+    fn entity(&self) -> Entity {
+        self.0.entity()
+    }
+
+    fn cost(&self) -> ActionCost {
+        self.0.cost()
+    }
+
+    fn effects(&self) -> Vec<Effect> {
+        self.0.effects()
+    }
+}
+
 #[derive(Default)]
 struct TurnQueue {
     queue: VecDeque<Entity>,
@@ -158,8 +322,8 @@ enum ControlSource {
 #[derive(Component)]
 struct Actor {
     control_source: ControlSource,
-    actions_per_turn: i32,
-    actions_remaining: i32,
+    actions_per_turn: u8,
+    actions_remaining: u8,
 }
 
 struct IntentionEvent(Entity, Intention);
@@ -221,49 +385,41 @@ fn generate_ai_intentions(
 }
 
 fn process_intention(
-    mut commands: Commands,
-    mut actors: Query<(&mut Facing, &mut HexPos, &mut Actor, &Transform, Entity)>,
+    mut actors: Query<(&Facing, &HexPos, Entity)>,
     mut ev_intention: EventReader<IntentionEvent>,
+    mut ev_action: EventWriter<ActionEvent>,
 ) {
     for IntentionEvent(entity, intention) in ev_intention.iter() {
-        let (mut facing, mut pos, mut actor, transform, _) = actors.get_mut(*entity).unwrap();
-        let init_transform = Transform {
-            rotation: facing.as_rotation(),
-            translation: pos.as_translation(HEX_SPACING),
-            ..Default::default()
-        };
+        let (facing, pos, _) = actors.get_mut(*entity).unwrap();
 
         match intention {
             Intention::Rotate(angle) => {
-                facing.rotate(*angle);
-                commands.entity(*entity).insert(transform.ease_to(
-                    init_transform.with_rotation(facing.as_rotation()),
-                    EaseFunction::QuadraticInOut,
-                    EasingType::Once {
-                        duration: Duration::from_millis(50),
-                    },
-                ));
+                let target = facing.rotated(*angle);
+                ev_action.send(ActionEvent(Box::new(RotateAction {
+                    entity: *entity,
+                    to: target,
+                })));
             }
             Intention::Move(angle) => {
-                actor.actions_remaining -= 1;
-                pos.move_facing(facing.rotated(*angle));
-                commands.entity(*entity).insert(transform.ease_to(
-                    init_transform.with_translation(pos.as_translation(HEX_SPACING)),
-                    EaseFunction::QuadraticInOut,
-                    EasingType::Once {
-                        duration: Duration::from_millis(200),
-                    },
-                ));
+                let dir = facing.rotated(*angle);
+                let target = pos.get_facing(dir);
+                ev_action.send(ActionEvent(Box::new(MoveAction {
+                    entity: *entity,
+                    to: target,
+                })));
             }
             Intention::EndTurn => {
-                actor.actions_remaining = 0;
+                ev_action.send(ActionEvent(Box::new(EndTurnAction { entity: *entity })));
             }
             Intention::Attack(angle) => {
                 let direction = facing.rotated(*angle);
                 let coord_to_attack = pos.get_facing(direction);
-                for (_, pos, _, _, e) in actors.iter() {
+                for (_, pos, e) in actors.iter() {
                     if pos.0 == coord_to_attack {
-                        commands.entity(e).despawn_recursive();
+                        ev_action.send(ActionEvent(Box::new(AttackAction {
+                            attacker: *entity,
+                            victim: e,
+                        })));
                     }
                 }
             }
@@ -271,7 +427,7 @@ fn process_intention(
     }
 }
 
-fn process_actions(mut query: Query<&mut Actor>, mut turn_queue: ResMut<TurnQueue>) {
+fn cycle_turn_queue(mut query: Query<&mut Actor>, mut turn_queue: ResMut<TurnQueue>) {
     if let Some(&entity) = turn_queue.queue.front() {
         if let Ok(mut actor) = query.get_mut(entity) {
             if actor.actions_remaining == 0 {
