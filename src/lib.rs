@@ -1,16 +1,16 @@
-use std::{
-    collections::{hash_map, VecDeque},
-    iter,
-    time::Duration,
-};
+use std::{collections::VecDeque, iter, time::Duration};
 
-use bevy::{prelude::*, utils::HashMap};
+use bevy::prelude::*;
 
 use bevy_easings::{Ease, EaseFunction, EasingType, EasingsPlugin};
 use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*, shapes::Circle};
 use hex2d::{Direction as HexDirection, *};
 use rand::prelude::*;
 use wasm_bindgen::prelude::*;
+
+mod hex_map;
+
+use hex_map::HexMap;
 
 #[wasm_bindgen]
 pub fn run() {
@@ -54,43 +54,6 @@ impl Plugin for GamePlugin {
 }
 
 const HEX_SPACING: Spacing = Spacing::FlatTop(40.0);
-
-#[derive(Debug, PartialEq, Clone)]
-pub struct HexMap<T> {
-    map: HashMap<Coordinate, T>,
-}
-
-impl<T> HexMap<T> {
-    pub fn insert(&mut self, coord: Coordinate, value: T) -> Option<T> {
-        self.map.insert(coord, value)
-    }
-
-    pub fn iter(&self) -> hash_map::Iter<'_, Coordinate, T> {
-        self.map.iter()
-    }
-}
-
-impl<T> Default for HexMap<T> {
-    fn default() -> Self {
-        Self {
-            map: Default::default(),
-        }
-    }
-}
-
-impl<T> FromIterator<(Coordinate, T)> for HexMap<T> {
-    fn from_iter<Iter: IntoIterator<Item = (Coordinate, T)>>(iter: Iter) -> Self {
-        Self {
-            map: FromIterator::from_iter(iter),
-        }
-    }
-}
-
-impl<T> Extend<(Coordinate, T)> for HexMap<T> {
-    fn extend<Iter: IntoIterator<Item = (Coordinate, T)>>(&mut self, iter: Iter) {
-        self.map.extend(iter)
-    }
-}
 
 fn setup(mut commands: Commands, mut turn_queue: ResMut<TurnQueue>) {
     // cameras
@@ -462,10 +425,6 @@ struct Facing(HexDirection);
 impl Facing {
     pub fn rotated(&self, angle: Angle) -> HexDirection {
         self.0 + angle
-    }
-
-    pub fn rotate(&mut self, angle: Angle) {
-        self.0 = self.rotated(angle);
     }
 
     pub fn as_rotation(&self) -> Quat {
