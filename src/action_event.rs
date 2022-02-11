@@ -1,8 +1,5 @@
-use std::time::Duration;
-
 use bevy::prelude::*;
 
-use bevy_easings::{Ease, EaseFunction, EasingType};
 use hex2d::{Direction as HexDirection, *};
 
 use super::common::*;
@@ -50,13 +47,13 @@ pub fn process_action_events(
 
             for effect in action.effects().iter() {
                 match effect {
-                    Effect::Move(_, to) => {
+                    Effect::MoveSelf(to) => {
                         pos.0 = *to;
                     }
-                    Effect::Rotate(_, to) => {
+                    Effect::RotateSelf(to) => {
                         facing.0 = *to;
                     }
-                    Effect::Die(e) => {
+                    Effect::Kill(e) => {
                         commands.entity(*e).despawn_recursive();
                     }
                 }
@@ -66,9 +63,9 @@ pub fn process_action_events(
 }
 
 pub enum Effect {
-    Move(Entity, Coordinate),
-    Rotate(Entity, HexDirection),
-    Die(Entity),
+    MoveSelf(Coordinate),
+    RotateSelf(HexDirection),
+    Kill(Entity),
 }
 
 pub struct MoveAction {
@@ -92,7 +89,7 @@ impl Action for MoveAction {
     }
 
     fn effects(&self) -> Vec<Effect> {
-        vec![Effect::Move(self.entity, self.to)]
+        vec![Effect::MoveSelf(self.to)]
     }
 }
 
@@ -117,7 +114,7 @@ impl Action for RotateAction {
     }
 
     fn effects(&self) -> Vec<Effect> {
-        vec![Effect::Rotate(self.entity, self.to)]
+        vec![Effect::RotateSelf(self.to)]
     }
 }
 
@@ -166,6 +163,6 @@ impl Action for AttackAction {
     }
 
     fn effects(&self) -> Vec<Effect> {
-        vec![Effect::Die(self.victim)]
+        vec![Effect::Kill(self.victim)]
     }
 }
