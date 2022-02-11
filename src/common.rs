@@ -37,16 +37,18 @@ impl Facing {
     }
 }
 
+impl Default for Facing {
+    fn default() -> Self {
+        Self(HexDirection::YZ)
+    }
+}
+
 #[derive(Component)]
 pub struct HexPos(pub Coordinate);
 
 impl HexPos {
     pub fn get_facing(&self, dir: HexDirection) -> Coordinate {
         self.0 + dir
-    }
-
-    pub fn move_facing(&mut self, dir: HexDirection) {
-        self.0 = self.get_facing(dir);
     }
 
     pub fn as_translation(&self, spacing: Spacing) -> Vec3 {

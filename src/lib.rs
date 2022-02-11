@@ -226,15 +226,6 @@ fn cycle_turn_queue(mut query: Query<&mut Actor>, mut turn_queue: ResMut<TurnQue
     }
 }
 
-#[derive(Component)]
-struct DirectionIndicator;
-
-impl Default for Facing {
-    fn default() -> Self {
-        Self(HexDirection::YZ)
-    }
-}
-
 fn direction_indicator() -> ShapeBundle {
     GeometryBuilder::build_as(
         &shapes::Polygon {
