@@ -1,12 +1,9 @@
-use std::{collections::VecDeque, iter, time::Duration};
+use std::time::Duration;
 
 use bevy::prelude::*;
 
-use bevy_easings::{Ease, EaseFunction, EasingType, EasingsPlugin};
-use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*, shapes::Circle};
+use bevy_easings::{Ease, EaseFunction, EasingType};
 use hex2d::{Direction as HexDirection, *};
-use rand::prelude::*;
-use wasm_bindgen::prelude::*;
 
 use super::common::*;
 
