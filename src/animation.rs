@@ -18,9 +18,9 @@ pub fn animate_movement(
 
         commands.entity(e).insert(transform.ease_to(
             new_transform,
-            EaseFunction::QuadraticInOut,
+            EaseFunction::QuarticIn,
             EasingType::Once {
-                duration: Duration::from_millis(50),
+                duration: Duration::from_millis(100),
             },
         ));
     }

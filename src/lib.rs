@@ -1,11 +1,8 @@
-use std::iter;
-
 use bevy::prelude::*;
 
 use bevy_easings::EasingsPlugin;
 use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*, shapes::Circle};
 use hex2d::*;
-use rand::prelude::*;
 use wasm_bindgen::prelude::*;
 
 pub mod action_event;
@@ -13,13 +10,14 @@ pub mod animation;
 pub mod common;
 pub mod hex_map;
 pub mod intention;
+pub mod map;
 pub mod turn_queue;
 
 use action_event::*;
 use animation::*;
 use common::*;
-use hex_map::HexMap;
 use intention::*;
+use map::*;
 use turn_queue::*;
 
 #[wasm_bindgen]
@@ -69,33 +67,7 @@ fn setup(mut commands: Commands, mut turn_queue: ResMut<TurnQueue>) {
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
     commands.spawn_bundle(UiCameraBundle::default());
 
-    // spawn map
-    let center: Coordinate<i32> = Coordinate::new(0, 0);
-    let tiles = (1..5)
-        .flat_map(|i| center.ring_iter(i, Spin::CW(XY)))
-        .chain(iter::once(center))
-        .map(|x| (x, Terrain::random()));
-    let map = HexMap::from_iter(tiles);
-
-    commands.spawn().with_children(|parent| {
-        for (&c, &t) in map.iter() {
-            let color = match t {
-                Terrain::Grass => Color::OLIVE,
-                Terrain::Water => Color::TEAL,
-            };
-            let draw_mode = DrawMode::Outlined {
-                fill_mode: FillMode::color(color),
-                outline_mode: StrokeMode::new(Color::BLACK, 1.0),
-            };
-            parent
-                .spawn_bundle(GeometryBuilder::build_as(
-                    &make_hex(c),
-                    draw_mode,
-                    Transform::default(),
-                ))
-                .insert(t);
-        }
-    });
+    spawn_map(&mut commands);
 
     // spawn player
     let player = commands
@@ -160,7 +132,7 @@ impl ActorBundle {
                 fill_mode: FillMode::color(Color::WHITE),
                 outline_mode: StrokeMode::new(Color::BLACK, 1.0),
             },
-            Transform::default().with_translation(pos.as_translation(HEX_SPACING)),
+            Transform::default(),
         );
 
         let actor = Actor {
@@ -189,7 +161,7 @@ impl ActorBundle {
                 fill_mode: FillMode::color(Color::RED),
                 outline_mode: StrokeMode::new(Color::BLACK, 1.0),
             },
-            Transform::default().with_translation(pos.as_translation(HEX_SPACING)),
+            Transform::default(),
         );
 
         let actor = Actor {
@@ -204,27 +176,5 @@ impl ActorBundle {
             shape,
             actor,
         }
-    }
-}
-
-#[derive(Debug, PartialEq, Clone, Copy, Component)]
-enum Terrain {
-    Grass,
-    Water,
-}
-
-impl Terrain {
-    pub fn random() -> Self {
-        let mut rng = thread_rng();
-        *[Terrain::Grass, Terrain::Water].choose(&mut rng).unwrap()
-    }
-}
-
-fn make_hex(coord: Coordinate) -> RegularPolygon {
-    let (x, y) = coord.to_pixel(HEX_SPACING);
-    RegularPolygon {
-        sides: 6,
-        feature: RegularPolygonFeature::Radius(40.0),
-        center: Vec2::new(x, y),
     }
 }
