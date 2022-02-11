@@ -8,9 +8,9 @@ use hex2d::*;
 use rand::prelude::*;
 use wasm_bindgen::prelude::*;
 
-mod action_event;
-mod common;
-mod hex_map;
+pub mod action_event;
+pub mod common;
+pub mod hex_map;
 
 use action_event::*;
 use common::*;
