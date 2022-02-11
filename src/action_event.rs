@@ -37,43 +37,24 @@ pub trait Action: Send + Sync {
 
 pub fn process_action_events(
     mut commands: Commands,
-    mut actors: Query<(&mut Actor, &mut HexPos, &mut Facing, &mut Transform)>,
+    mut actors: Query<(&mut Actor, &mut HexPos, &mut Facing)>,
     mut events: EventReader<ActionEvent>,
 ) {
     for action in events.iter() {
-        if let Ok((mut actor, mut pos, mut facing, transform)) = actors.get_mut(action.entity()) {
+        if let Ok((mut actor, mut pos, mut facing)) = actors.get_mut(action.entity()) {
             match action.cost() {
                 ActionCost::All => actor.actions_remaining = 0,
                 ActionCost::Fixed(x) => actor.actions_remaining -= x,
                 ActionCost::None => (),
             }
 
-            let init_transform = Transform {
-                rotation: facing.as_rotation(),
-                translation: pos.as_translation(HEX_SPACING),
-                ..Default::default()
-            };
             for effect in action.effects().iter() {
                 match effect {
-                    Effect::Move(e, to) => {
+                    Effect::Move(_, to) => {
                         pos.0 = *to;
-                        commands.entity(*e).insert(transform.ease_to(
-                            init_transform.with_translation(pos.as_translation(HEX_SPACING)),
-                            EaseFunction::QuadraticInOut,
-                            EasingType::Once {
-                                duration: Duration::from_millis(200),
-                            },
-                        ));
                     }
-                    Effect::Rotate(e, to) => {
+                    Effect::Rotate(_, to) => {
                         facing.0 = *to;
-                        commands.entity(*e).insert(transform.ease_to(
-                            init_transform.with_rotation(facing.as_rotation()),
-                            EaseFunction::QuadraticInOut,
-                            EasingType::Once {
-                                duration: Duration::from_millis(50),
-                            },
-                        ));
                     }
                     Effect::Die(e) => {
                         commands.entity(*e).despawn_recursive();

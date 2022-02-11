@@ -9,12 +9,14 @@ use rand::prelude::*;
 use wasm_bindgen::prelude::*;
 
 pub mod action_event;
+pub mod animation;
 pub mod common;
 pub mod hex_map;
 pub mod intention;
 pub mod turn_queue;
 
 use action_event::*;
+use animation::*;
 use common::*;
 use hex_map::HexMap;
 use intention::*;
@@ -57,6 +59,7 @@ impl Plugin for GamePlugin {
                     .label("process_actions")
                     .after("process_action_events"),
             )
+            .add_system(animate_movement.after("process_actions"))
             .add_system(bevy::input::system::exit_on_esc_system);
     }
 }
