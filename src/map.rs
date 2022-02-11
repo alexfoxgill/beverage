@@ -8,10 +8,15 @@ use rand::prelude::*;
 
 use crate::{common::HEX_SPACING, hex_map::HexMap};
 
-#[derive(Debug, PartialEq, Clone, Copy, Component)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Terrain {
     Grass,
     Water,
+}
+
+#[derive(Component)]
+pub struct MapTile {
+    pub terrain: Terrain,
 }
 
 impl Terrain {
@@ -21,7 +26,7 @@ impl Terrain {
     }
 }
 
-fn make_hexgon_tile(coord: Coordinate) -> RegularPolygon {
+fn make_hex_tile(coord: Coordinate) -> RegularPolygon {
     let (x, y) = coord.to_pixel(HEX_SPACING);
     RegularPolygon {
         sides: 6,
@@ -31,13 +36,7 @@ fn make_hexgon_tile(coord: Coordinate) -> RegularPolygon {
 }
 
 pub fn spawn_map(commands: &mut Commands) {
-    // spawn map
-    let center: Coordinate<i32> = Coordinate::new(0, 0);
-    let tiles = (1..5)
-        .flat_map(|i| center.ring_iter(i, Spin::CW(XY)))
-        .chain(iter::once(center))
-        .map(|x| (x, Terrain::random()));
-    let map = HexMap::from_iter(tiles);
+    let map = generate_map();
 
     commands.spawn().with_children(|parent| {
         for (&c, &t) in map.iter() {
@@ -51,11 +50,20 @@ pub fn spawn_map(commands: &mut Commands) {
             };
             parent
                 .spawn_bundle(GeometryBuilder::build_as(
-                    &make_hexgon_tile(c),
+                    &make_hex_tile(c),
                     draw_mode,
                     Transform::default(),
                 ))
-                .insert(t);
+                .insert(MapTile { terrain: t });
         }
     });
+}
+
+pub fn generate_map() -> HexMap<Terrain> {
+    let center: Coordinate<i32> = Coordinate::new(0, 0);
+    let tiles = (1..5)
+        .flat_map(|i| center.ring_iter(i, Spin::CW(XY)))
+        .chain(iter::once(center))
+        .map(|x| (x, Terrain::random()));
+    HexMap::from_iter(tiles)
 }
