@@ -10,6 +10,7 @@ pub enum ActionCost {
     None,
 }
 
+#[derive(Debug)]
 pub struct ActionEvent(Box<dyn Action>);
 
 impl Action for ActionEvent {
@@ -26,7 +27,7 @@ impl Action for ActionEvent {
     }
 }
 
-pub trait Action: Send + Sync {
+pub trait Action: Send + Sync + std::fmt::Debug {
     fn entity(&self) -> Entity;
     fn cost(&self) -> ActionCost;
     fn effects(&self) -> Vec<Effect>;
@@ -41,7 +42,10 @@ pub fn process_action_events(
         if let Ok((mut actor, mut pos, mut facing)) = actors.get_mut(action.entity()) {
             match action.cost() {
                 ActionCost::All => actor.actions_remaining = 0,
-                ActionCost::Fixed(x) => actor.actions_remaining -= x,
+                ActionCost::Fixed(x) if x <= actor.actions_remaining => {
+                    actor.actions_remaining -= x
+                }
+                ActionCost::Fixed(_) => continue,
                 ActionCost::None => (),
             }
 
@@ -68,6 +72,7 @@ pub enum Effect {
     Kill(Entity),
 }
 
+#[derive(Debug)]
 pub struct MoveAction {
     entity: Entity,
     to: Coordinate,
@@ -78,7 +83,6 @@ impl MoveAction {
         ActionEvent(Box::new(MoveAction { entity, to }))
     }
 }
-
 impl Action for MoveAction {
     fn entity(&self) -> Entity {
         self.entity
@@ -93,6 +97,7 @@ impl Action for MoveAction {
     }
 }
 
+#[derive(Debug)]
 pub struct RotateAction {
     entity: Entity,
     to: HexDirection,
@@ -118,6 +123,7 @@ impl Action for RotateAction {
     }
 }
 
+#[derive(Debug)]
 pub struct EndTurnAction {
     entity: Entity,
 }
@@ -142,6 +148,7 @@ impl Action for EndTurnAction {
     }
 }
 
+#[derive(Debug)]
 pub struct AttackAction {
     attacker: Entity,
     victim: Entity,

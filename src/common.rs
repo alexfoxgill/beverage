@@ -10,7 +10,7 @@ pub enum ControlSource {
     AI,
 }
 
-#[derive(Component)]
+#[derive(Component, Debug)]
 pub struct Actor {
     pub control_source: ControlSource,
     pub actions_per_turn: u8,

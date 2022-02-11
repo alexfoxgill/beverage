@@ -9,6 +9,7 @@ use crate::turn_queue::*;
 
 pub struct IntentionEvent(Entity, Intention);
 
+#[derive(Debug)]
 pub enum Intention {
     Rotate(Angle),
     Move(Angle),

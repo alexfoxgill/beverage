@@ -36,12 +36,17 @@ impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(Msaa { samples: 4 })
             .insert_resource(ClearColor(Color::rgb(0.9, 0.9, 0.9)))
+            .add_state(AnimatingState::Still)
             .add_event::<IntentionEvent>()
             .add_event::<ActionEvent>()
             .init_resource::<TurnQueue>()
             .add_startup_system(setup)
             .add_system(ingame_keyboard_input.label("produce_intention"))
-            .add_system(generate_ai_intentions.label("produce_intention"))
+            .add_system_set(
+                SystemSet::on_update(AnimatingState::Still)
+                    .with_system(generate_ai_intentions)
+                    .label("produce_intention"),
+            )
             .add_system(
                 process_intention
                     .label("process_intention")
@@ -57,7 +62,12 @@ impl Plugin for GamePlugin {
                     .label("process_actions")
                     .after("process_action_events"),
             )
-            .add_system(animate_movement.after("process_actions"))
+            .add_system(
+                animate_movement
+                    .label("run_animations")
+                    .after("process_actions"),
+            )
+            .add_system(update_animating_state.after("run_animations"))
             .add_system(bevy::input::system::exit_on_esc_system);
     }
 }
