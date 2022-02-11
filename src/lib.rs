@@ -8,8 +8,12 @@ use hex2d::{Direction as HexDirection, *};
 use rand::prelude::*;
 use wasm_bindgen::prelude::*;
 
+mod action_event;
+mod common;
 mod hex_map;
 
+use action_event::*;
+use common::*;
 use hex_map::HexMap;
 
 #[wasm_bindgen]
@@ -52,8 +56,6 @@ impl Plugin for GamePlugin {
             .add_system(bevy::input::system::exit_on_esc_system);
     }
 }
-
-const HEX_SPACING: Spacing = Spacing::FlatTop(40.0);
 
 fn setup(mut commands: Commands, mut turn_queue: ResMut<TurnQueue>) {
     // cameras
@@ -113,204 +115,9 @@ fn spawn_enemy(commands: &mut Commands, turn_queue: &mut TurnQueue, coordinate: 
     turn_queue.queue.push_back(enemy);
 }
 
-fn process_action_events(
-    mut commands: Commands,
-    mut actors: Query<(&mut Actor, &mut HexPos, &mut Facing, &mut Transform)>,
-    mut events: EventReader<ActionEvent>,
-) {
-    for action in events.iter() {
-        if let Ok((mut actor, mut pos, mut facing, transform)) = actors.get_mut(action.entity()) {
-            match action.cost() {
-                ActionCost::All => actor.actions_remaining = 0,
-                ActionCost::Fixed(x) => actor.actions_remaining -= x,
-                ActionCost::None => (),
-            }
-
-            let init_transform = Transform {
-                rotation: facing.as_rotation(),
-                translation: pos.as_translation(HEX_SPACING),
-                ..Default::default()
-            };
-            for effect in action.effects().iter() {
-                match effect {
-                    Effect::Move(e, to) => {
-                        pos.0 = *to;
-                        commands.entity(*e).insert(transform.ease_to(
-                            init_transform.with_translation(pos.as_translation(HEX_SPACING)),
-                            EaseFunction::QuadraticInOut,
-                            EasingType::Once {
-                                duration: Duration::from_millis(200),
-                            },
-                        ));
-                    }
-                    Effect::Rotate(e, to) => {
-                        facing.0 = *to;
-                        commands.entity(*e).insert(transform.ease_to(
-                            init_transform.with_rotation(facing.as_rotation()),
-                            EaseFunction::QuadraticInOut,
-                            EasingType::Once {
-                                duration: Duration::from_millis(50),
-                            },
-                        ));
-                    }
-                    Effect::Die(e) => {
-                        commands.entity(*e).despawn_recursive();
-                    }
-                }
-            }
-        }
-    }
-}
-
-pub trait Action: Send + Sync {
-    fn entity(&self) -> Entity;
-    fn cost(&self) -> ActionCost;
-    fn effects(&self) -> Vec<Effect>;
-}
-
-pub struct MoveAction {
-    entity: Entity,
-    to: Coordinate,
-}
-
-impl MoveAction {
-    pub fn event(entity: Entity, to: Coordinate) -> ActionEvent {
-        ActionEvent(Box::new(MoveAction { entity, to }))
-    }
-}
-
-impl Action for MoveAction {
-    fn entity(&self) -> Entity {
-        self.entity
-    }
-
-    fn cost(&self) -> ActionCost {
-        ActionCost::Fixed(1)
-    }
-
-    fn effects(&self) -> Vec<Effect> {
-        vec![Effect::Move(self.entity, self.to)]
-    }
-}
-
-pub struct RotateAction {
-    entity: Entity,
-    to: HexDirection,
-}
-
-impl RotateAction {
-    pub fn event(entity: Entity, to: HexDirection) -> ActionEvent {
-        ActionEvent(Box::new(RotateAction { entity, to }))
-    }
-}
-
-impl Action for RotateAction {
-    fn entity(&self) -> Entity {
-        self.entity
-    }
-
-    fn cost(&self) -> ActionCost {
-        ActionCost::None
-    }
-
-    fn effects(&self) -> Vec<Effect> {
-        vec![Effect::Rotate(self.entity, self.to)]
-    }
-}
-
-pub struct EndTurnAction {
-    entity: Entity,
-}
-
-impl EndTurnAction {
-    pub fn event(entity: Entity) -> ActionEvent {
-        ActionEvent(Box::new(EndTurnAction { entity }))
-    }
-}
-
-impl Action for EndTurnAction {
-    fn entity(&self) -> Entity {
-        self.entity
-    }
-
-    fn cost(&self) -> ActionCost {
-        ActionCost::All
-    }
-
-    fn effects(&self) -> Vec<Effect> {
-        vec![]
-    }
-}
-
-pub struct AttackAction {
-    attacker: Entity,
-    victim: Entity,
-}
-
-impl AttackAction {
-    pub fn event(attacker: Entity, victim: Entity) -> ActionEvent {
-        ActionEvent(Box::new(AttackAction { attacker, victim }))
-    }
-}
-
-impl Action for AttackAction {
-    fn entity(&self) -> Entity {
-        self.attacker
-    }
-
-    fn cost(&self) -> ActionCost {
-        ActionCost::All
-    }
-
-    fn effects(&self) -> Vec<Effect> {
-        vec![Effect::Die(self.victim)]
-    }
-}
-
-pub enum Effect {
-    Move(Entity, Coordinate),
-    Rotate(Entity, HexDirection),
-    Die(Entity),
-}
-
-pub enum ActionCost {
-    All,
-    Fixed(u8),
-    None,
-}
-
-pub struct ActionEvent(Box<dyn Action>);
-
-impl Action for ActionEvent {
-    fn entity(&self) -> Entity {
-        self.0.entity()
-    }
-
-    fn cost(&self) -> ActionCost {
-        self.0.cost()
-    }
-
-    fn effects(&self) -> Vec<Effect> {
-        self.0.effects()
-    }
-}
-
 #[derive(Default)]
 struct TurnQueue {
     queue: VecDeque<Entity>,
-}
-
-#[derive(Debug, PartialEq, Clone, Copy)]
-enum ControlSource {
-    Player,
-    AI,
-}
-
-#[derive(Component)]
-struct Actor {
-    control_source: ControlSource,
-    actions_per_turn: u8,
-    actions_remaining: u8,
 }
 
 struct IntentionEvent(Entity, Intention);
@@ -416,45 +223,6 @@ fn cycle_turn_queue(mut query: Query<&mut Actor>, mut turn_queue: ResMut<TurnQue
         } else {
             turn_queue.queue.pop_front();
         }
-    }
-}
-
-#[derive(Component)]
-struct Facing(HexDirection);
-
-impl Facing {
-    pub fn rotated(&self, angle: Angle) -> HexDirection {
-        self.0 + angle
-    }
-
-    pub fn as_rotation(&self) -> Quat {
-        // the z-axis points towards the camera, so rotate a negative amount
-        Quat::from_rotation_z(-self.0.to_radians_flat::<f32>())
-    }
-}
-
-#[derive(Component)]
-pub struct HexPos(Coordinate);
-
-impl HexPos {
-    pub fn get_facing(&self, dir: HexDirection) -> Coordinate {
-        self.0 + dir
-    }
-
-    pub fn move_facing(&mut self, dir: HexDirection) {
-        self.0 = self.get_facing(dir);
-    }
-
-    pub fn as_translation(&self, spacing: Spacing) -> Vec3 {
-        let (x, y) = self.0.to_pixel(spacing);
-        // the y-axis points upward, so invert it
-        Vec3::new(x, -y, 0.0)
-    }
-}
-
-impl Default for HexPos {
-    fn default() -> Self {
-        Self(Coordinate::new(0, 0))
     }
 }
 
