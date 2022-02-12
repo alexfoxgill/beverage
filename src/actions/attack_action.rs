@@ -49,15 +49,12 @@ impl Plugin for AttackActionPlugin {
 }
 
 fn attack_action_system(
-    actors: Query<&Actor>,
     mut events: EventReader<ActionEvent>,
     mut effects: EventWriter<EffectEvent>,
 ) {
     for action in events.iter().filter_map(|e| e.as_action::<AttackAction>()) {
-        if let Ok(actor) = actors.get(action.entity()) {
-            for effect in action.effects() {
-                effects.send(effect);
-            }
+        for effect in action.effects() {
+            effects.send(effect);
         }
     }
 }

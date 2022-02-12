@@ -49,7 +49,7 @@ impl Plugin for MoveActionPlugin {
 }
 
 fn move_action_system(
-    mut actors: Query<&Actor>,
+    actors: Query<&Actor>,
     mut events: EventReader<ActionEvent>,
     mut effects: EventWriter<EffectEvent>,
 ) {
