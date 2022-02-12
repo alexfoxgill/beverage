@@ -1,8 +1,10 @@
 use bevy::prelude::*;
 
-use hex2d::{Direction as HexDirection, *};
+use hex2d::*;
 
 pub const HEX_SPACING: Spacing = Spacing::FlatTop(40.0);
+
+pub type HexDirection = hex2d::Direction;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum ControlSource {

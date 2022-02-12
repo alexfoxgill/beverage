@@ -2,8 +2,9 @@ use std::any::Any;
 
 use bevy::prelude::*;
 
-use self::move_effect::MoveEffectPlugin;
+use self::{face_effect::FaceEffectPlugin, move_effect::MoveEffectPlugin};
 
+pub mod face_effect;
 pub mod move_effect;
 
 pub trait Effect: Send + Sync + std::fmt::Debug {
@@ -26,6 +27,8 @@ pub struct EffectPlugin;
 
 impl Plugin for EffectPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<EffectEvent>().add_plugin(MoveEffectPlugin);
+        app.add_event::<EffectEvent>()
+            .add_plugin(MoveEffectPlugin)
+            .add_plugin(FaceEffectPlugin);
     }
 }

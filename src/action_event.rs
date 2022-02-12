@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use hex2d::{Direction as HexDirection, *};
 
-use crate::effects::{move_effect::MoveEffect, *};
+use crate::effects::{face_effect::FaceEffect, move_effect::MoveEffect, *};
 
 use super::common::*;
 
@@ -58,7 +58,7 @@ pub fn process_action_events(
                         effects.send(MoveEffect::event(action.entity(), *to));
                     }
                     Effect::RotateSelf(to) => {
-                        facing.0 = *to;
+                        effects.send(FaceEffect::event(action.entity(), *to));
                     }
                     Effect::Kill(e) => {
                         commands.entity(*e).despawn_recursive();
