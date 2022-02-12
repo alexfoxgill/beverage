@@ -32,7 +32,7 @@ pub fn generate_ai_actions(
     if let Some(&entity) = turn_queue.queue.front() {
         if let Ok((pos, facing, actor)) = actors.get(entity) {
             if actor.control_source == ControlSource::AI {
-                let rotation = Angle::from_int::<i32>(rand::thread_rng().gen_range(1..=6));
+                let rotation = Angle::from_int(rand::thread_rng().gen_range(1..=6));
 
                 let target = facing.rotated(rotation);
                 actions.send(RotateAction::event(entity, target));

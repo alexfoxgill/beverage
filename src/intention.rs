@@ -15,7 +15,8 @@ pub struct IntentionPlugin;
 
 impl Plugin for IntentionPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(ingame_keyboard_input.label(IntentionProducer))
+        app.add_event::<IntentionEvent>()
+            .add_system(ingame_keyboard_input.label(IntentionProducer))
             .add_system(
                 process_intention
                     .label(ActionProducer)

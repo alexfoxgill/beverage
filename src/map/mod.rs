@@ -6,7 +6,21 @@ use bevy_prototype_lyon::prelude::*;
 use hex2d::*;
 use rand::prelude::*;
 
-use crate::{common::HEX_SPACING, hex_map::HexMap};
+use crate::{
+    common::{HexPos, HEX_SPACING},
+    hex_map::HexMap,
+};
+
+pub struct MapPlugin;
+
+impl Plugin for MapPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_startup_system(spawn_map.label(SpawnMap));
+    }
+}
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq, SystemLabel)]
+pub struct SpawnMap;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Terrain {
@@ -35,7 +49,7 @@ fn make_hex_tile(coord: Coordinate) -> RegularPolygon {
     }
 }
 
-pub fn spawn_map(commands: &mut Commands) {
+pub fn spawn_map(mut commands: Commands) {
     let map = generate_map();
 
     commands.spawn().with_children(|parent| {
@@ -54,6 +68,7 @@ pub fn spawn_map(commands: &mut Commands) {
                     draw_mode,
                     Transform::default(),
                 ))
+                .insert(HexPos(c))
                 .insert(MapTile { terrain: t });
         }
     });

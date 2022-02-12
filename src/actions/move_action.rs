@@ -1,8 +1,11 @@
 use super::*;
-use crate::effects::{
-    energy_cost_effect::{ActionCost, EnergyCostEffect},
-    move_effect::MoveEffect,
-    EffectProducer,
+use crate::{
+    effects::{
+        energy_cost_effect::{ActionCost, EnergyCostEffect},
+        move_effect::MoveEffect,
+        EffectProducer,
+    },
+    map::MapTile,
 };
 use bevy::prelude::*;
 use hex2d::Coordinate;
@@ -50,14 +53,17 @@ impl Plugin for MoveActionPlugin {
 
 fn move_action_system(
     actors: Query<&Actor>,
+    map_tiles: Query<&HexPos, With<MapTile>>,
     mut events: EventReader<ActionEvent>,
     mut effects: EventWriter<EffectEvent>,
 ) {
     for action in events.iter().filter_map(|e| e.as_action::<MoveAction>()) {
         if let Ok(actor) = actors.get(action.entity()) {
             if actor.actions_remaining >= 1 {
-                for effect in action.effects() {
-                    effects.send(effect);
+                if map_tiles.iter().any(|x| x.0 == action.to) {
+                    for effect in action.effects() {
+                        effects.send(effect);
+                    }
                 }
             }
         }

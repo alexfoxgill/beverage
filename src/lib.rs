@@ -41,14 +41,13 @@ impl Plugin for GamePlugin {
         app.insert_resource(Msaa { samples: 4 })
             .insert_resource(ClearColor(Color::rgb(0.9, 0.9, 0.9)))
             .add_state(AnimatingState::Still)
-            .add_event::<IntentionEvent>()
-            .add_event::<ActionEvent>()
             .init_resource::<TurnQueue>()
+            .add_plugin(MapPlugin)
             .add_plugin(ActionPlugin)
             .add_plugin(EffectPlugin)
             .add_plugin(AiPlugin)
             .add_plugin(IntentionPlugin)
-            .add_startup_system(setup)
+            .add_startup_system(setup.after(SpawnMap))
             .add_system(cycle_turn_queue.after(EffectOutcome))
             .add_system(
                 animate_movement
@@ -64,8 +63,6 @@ fn setup(mut commands: Commands, mut turn_queue: ResMut<TurnQueue>) {
     // cameras
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
     commands.spawn_bundle(UiCameraBundle::default());
-
-    spawn_map(&mut commands);
 
     // spawn player
     let player = commands
