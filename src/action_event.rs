@@ -26,7 +26,7 @@ impl Action for ActionEvent {
         self.0.cost()
     }
 
-    fn effects(&self) -> Vec<Effect> {
+    fn effects(&self) -> Vec<EffectEvent> {
         self.0.effects()
     }
 }
@@ -34,17 +34,16 @@ impl Action for ActionEvent {
 pub trait Action: Send + Sync + std::fmt::Debug {
     fn entity(&self) -> Entity;
     fn cost(&self) -> ActionCost;
-    fn effects(&self) -> Vec<Effect>;
+    fn effects(&self) -> Vec<EffectEvent>;
 }
 
 pub fn process_action_events(
-    mut commands: Commands,
-    mut actors: Query<(&mut Actor, &HexPos, &mut Facing)>,
+    mut actors: Query<(&mut Actor, &HexPos, &Facing)>,
     mut events: EventReader<ActionEvent>,
     mut effects: EventWriter<EffectEvent>,
 ) {
     for action in events.iter() {
-        if let Ok((mut actor, pos, mut facing)) = actors.get_mut(action.entity()) {
+        if let Ok((mut actor, _pos, _facing)) = actors.get_mut(action.entity()) {
             match action.cost() {
                 ActionCost::All => actor.actions_remaining = 0,
                 ActionCost::Fixed(x) if x <= actor.actions_remaining => {
@@ -54,18 +53,8 @@ pub fn process_action_events(
                 ActionCost::None => (),
             }
 
-            for effect in action.effects().iter() {
-                match effect {
-                    Effect::MoveSelf(to) => {
-                        effects.send(MoveEffect::event(action.entity(), *to));
-                    }
-                    Effect::RotateSelf(to) => {
-                        effects.send(FaceEffect::event(action.entity(), *to));
-                    }
-                    Effect::Kill(e) => {
-                        effects.send(KillEffect::event(*e));
-                    }
-                }
+            for effect in action.effects().into_iter() {
+                effects.send(effect);
             }
         }
     }
@@ -97,8 +86,8 @@ impl Action for MoveAction {
         ActionCost::Fixed(1)
     }
 
-    fn effects(&self) -> Vec<Effect> {
-        vec![Effect::MoveSelf(self.to)]
+    fn effects(&self) -> Vec<EffectEvent> {
+        vec![MoveEffect::event(self.entity, self.to)]
     }
 }
 
@@ -123,8 +112,8 @@ impl Action for RotateAction {
         ActionCost::None
     }
 
-    fn effects(&self) -> Vec<Effect> {
-        vec![Effect::RotateSelf(self.to)]
+    fn effects(&self) -> Vec<EffectEvent> {
+        vec![FaceEffect::event(self.entity, self.to)]
     }
 }
 
@@ -148,7 +137,7 @@ impl Action for EndTurnAction {
         ActionCost::All
     }
 
-    fn effects(&self) -> Vec<Effect> {
+    fn effects(&self) -> Vec<EffectEvent> {
         vec![]
     }
 }
@@ -174,7 +163,7 @@ impl Action for AttackAction {
         ActionCost::All
     }
 
-    fn effects(&self) -> Vec<Effect> {
-        vec![Effect::Kill(self.victim)]
+    fn effects(&self) -> Vec<EffectEvent> {
+        vec![KillEffect::event(self.victim)]
     }
 }
