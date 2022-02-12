@@ -5,7 +5,7 @@ use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*, shapes::Circle};
 use hex2d::*;
 use wasm_bindgen::prelude::*;
 
-pub mod action_event;
+pub mod actions;
 pub mod animation;
 pub mod common;
 pub mod effects;
@@ -14,7 +14,7 @@ pub mod intention;
 pub mod map;
 pub mod turn_queue;
 
-use action_event::*;
+use actions::*;
 use animation::*;
 use common::*;
 use effects::*;
@@ -42,6 +42,7 @@ impl Plugin for GamePlugin {
             .add_event::<IntentionEvent>()
             .add_event::<ActionEvent>()
             .init_resource::<TurnQueue>()
+            .add_plugin(ActionPlugin)
             .add_plugin(EffectPlugin)
             .add_startup_system(setup)
             .add_system(ingame_keyboard_input.label("produce_intention"))
@@ -53,12 +54,8 @@ impl Plugin for GamePlugin {
             .add_system(
                 process_intention
                     .label("process_intention")
+                    .label(ActionProducer)
                     .after("produce_intention"),
-            )
-            .add_system(
-                process_action_events
-                    .label(EffectProducer)
-                    .after("process_intention"),
             )
             .add_system(
                 cycle_turn_queue
