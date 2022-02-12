@@ -2,6 +2,8 @@ use bevy::prelude::*;
 
 use hex2d::{Direction as HexDirection, *};
 
+use crate::effects::{move_effect::MoveEffect, *};
+
 use super::common::*;
 
 pub enum ActionCost {
@@ -35,11 +37,12 @@ pub trait Action: Send + Sync + std::fmt::Debug {
 
 pub fn process_action_events(
     mut commands: Commands,
-    mut actors: Query<(&mut Actor, &mut HexPos, &mut Facing)>,
+    mut actors: Query<(&mut Actor, &HexPos, &mut Facing)>,
     mut events: EventReader<ActionEvent>,
+    mut effects: EventWriter<EffectEvent>,
 ) {
     for action in events.iter() {
-        if let Ok((mut actor, mut pos, mut facing)) = actors.get_mut(action.entity()) {
+        if let Ok((mut actor, pos, mut facing)) = actors.get_mut(action.entity()) {
             match action.cost() {
                 ActionCost::All => actor.actions_remaining = 0,
                 ActionCost::Fixed(x) if x <= actor.actions_remaining => {
@@ -52,7 +55,7 @@ pub fn process_action_events(
             for effect in action.effects().iter() {
                 match effect {
                     Effect::MoveSelf(to) => {
-                        pos.0 = *to;
+                        effects.send(MoveEffect::event(action.entity(), *to));
                     }
                     Effect::RotateSelf(to) => {
                         facing.0 = *to;

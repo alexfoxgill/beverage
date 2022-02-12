@@ -8,6 +8,7 @@ use wasm_bindgen::prelude::*;
 pub mod action_event;
 pub mod animation;
 pub mod common;
+pub mod effects;
 pub mod hex_map;
 pub mod intention;
 pub mod map;
@@ -16,6 +17,7 @@ pub mod turn_queue;
 use action_event::*;
 use animation::*;
 use common::*;
+use effects::*;
 use intention::*;
 use map::*;
 use turn_queue::*;
@@ -40,6 +42,7 @@ impl Plugin for GamePlugin {
             .add_event::<IntentionEvent>()
             .add_event::<ActionEvent>()
             .init_resource::<TurnQueue>()
+            .add_plugin(EffectPlugin)
             .add_startup_system(setup)
             .add_system(ingame_keyboard_input.label("produce_intention"))
             .add_system_set(
@@ -54,6 +57,7 @@ impl Plugin for GamePlugin {
             )
             .add_system(
                 process_action_events
+                    .label(EffectProducer)
                     .label("process_action_events")
                     .after("process_intention"),
             )
