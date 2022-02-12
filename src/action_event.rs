@@ -3,16 +3,14 @@ use bevy::prelude::*;
 use hex2d::{Direction as HexDirection, *};
 
 use crate::effects::{
-    face_effect::FaceEffect, kill_effect::KillEffect, move_effect::MoveEffect, *,
+    energy_cost_effect::{ActionCost, EnergyCostEffect},
+    face_effect::FaceEffect,
+    kill_effect::KillEffect,
+    move_effect::MoveEffect,
+    *,
 };
 
 use super::common::*;
-
-pub enum ActionCost {
-    All,
-    Fixed(u8),
-    None,
-}
 
 #[derive(Debug)]
 pub struct ActionEvent(Box<dyn Action>);
@@ -22,10 +20,6 @@ impl Action for ActionEvent {
         self.0.entity()
     }
 
-    fn cost(&self) -> ActionCost {
-        self.0.cost()
-    }
-
     fn effects(&self) -> Vec<EffectEvent> {
         self.0.effects()
     }
@@ -33,24 +27,23 @@ impl Action for ActionEvent {
 
 pub trait Action: Send + Sync + std::fmt::Debug {
     fn entity(&self) -> Entity;
-    fn cost(&self) -> ActionCost;
     fn effects(&self) -> Vec<EffectEvent>;
 }
 
 pub fn process_action_events(
-    mut actors: Query<(&mut Actor, &HexPos, &Facing)>,
+    mut actors: Query<&Actor>,
     mut events: EventReader<ActionEvent>,
     mut effects: EventWriter<EffectEvent>,
 ) {
     for action in events.iter() {
-        if let Ok((mut actor, _pos, _facing)) = actors.get_mut(action.entity()) {
-            match action.cost() {
-                ActionCost::All => actor.actions_remaining = 0,
-                ActionCost::Fixed(x) if x <= actor.actions_remaining => {
-                    actor.actions_remaining -= x
+        if let Ok(actor) = actors.get_mut(action.entity()) {
+            for effect in action.effects().iter() {
+                if let Some(energy_cost) = effect.as_effect::<EnergyCostEffect>() {
+                    match energy_cost.cost {
+                        ActionCost::Fixed(x) if x > actor.actions_remaining => continue,
+                        _ => (),
+                    }
                 }
-                ActionCost::Fixed(_) => continue,
-                ActionCost::None => (),
             }
 
             for effect in action.effects().into_iter() {
@@ -82,12 +75,11 @@ impl Action for MoveAction {
         self.entity
     }
 
-    fn cost(&self) -> ActionCost {
-        ActionCost::Fixed(1)
-    }
-
     fn effects(&self) -> Vec<EffectEvent> {
-        vec![MoveEffect::event(self.entity, self.to)]
+        vec![
+            EnergyCostEffect::event(self.entity, ActionCost::Fixed(1)),
+            MoveEffect::event(self.entity, self.to),
+        ]
     }
 }
 
@@ -108,12 +100,11 @@ impl Action for RotateAction {
         self.entity
     }
 
-    fn cost(&self) -> ActionCost {
-        ActionCost::None
-    }
-
     fn effects(&self) -> Vec<EffectEvent> {
-        vec![FaceEffect::event(self.entity, self.to)]
+        vec![
+            EnergyCostEffect::event(self.entity, ActionCost::None),
+            FaceEffect::event(self.entity, self.to),
+        ]
     }
 }
 
@@ -133,12 +124,8 @@ impl Action for EndTurnAction {
         self.entity
     }
 
-    fn cost(&self) -> ActionCost {
-        ActionCost::All
-    }
-
     fn effects(&self) -> Vec<EffectEvent> {
-        vec![]
+        vec![EnergyCostEffect::event(self.entity, ActionCost::All)]
     }
 }
 
@@ -159,11 +146,10 @@ impl Action for AttackAction {
         self.attacker
     }
 
-    fn cost(&self) -> ActionCost {
-        ActionCost::All
-    }
-
     fn effects(&self) -> Vec<EffectEvent> {
-        vec![KillEffect::event(self.victim)]
+        vec![
+            EnergyCostEffect::event(self.attacker, ActionCost::All),
+            KillEffect::event(self.victim),
+        ]
     }
 }

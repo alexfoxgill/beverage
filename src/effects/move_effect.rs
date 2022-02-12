@@ -3,7 +3,7 @@ use hex2d::Coordinate;
 
 use crate::common::HexPos;
 
-use super::{Effect, EffectEvent, EffectProducer};
+use super::{Effect, EffectEvent, EffectOutcome, EffectProducer};
 
 #[derive(Debug)]
 pub struct MoveEffect {
@@ -27,7 +27,11 @@ pub struct MoveEffectPlugin;
 
 impl Plugin for MoveEffectPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(move_effect_system.after(EffectProducer));
+        app.add_system(
+            move_effect_system
+                .label(EffectOutcome)
+                .after(EffectProducer),
+        );
     }
 }
 

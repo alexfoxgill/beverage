@@ -58,18 +58,17 @@ impl Plugin for GamePlugin {
             .add_system(
                 process_action_events
                     .label(EffectProducer)
-                    .label("process_action_events")
                     .after("process_intention"),
             )
             .add_system(
                 cycle_turn_queue
                     .label("process_actions")
-                    .after("process_action_events"),
+                    .after(EffectOutcome),
             )
             .add_system(
                 animate_movement
                     .label("run_animations")
-                    .after("process_actions"),
+                    .after(EffectOutcome),
             )
             .add_system(update_animating_state.after("run_animations"))
             .add_system(bevy::input::system::exit_on_esc_system);

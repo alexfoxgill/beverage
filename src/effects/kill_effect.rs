@@ -1,8 +1,6 @@
 use bevy::prelude::*;
 
-use crate::common::{Facing, HexDirection};
-
-use super::{Effect, EffectEvent, EffectProducer};
+use super::{Effect, EffectEvent, EffectOutcome, EffectProducer};
 
 #[derive(Debug)]
 pub struct KillEffect {
@@ -25,7 +23,11 @@ pub struct KillEffectPlugin;
 
 impl Plugin for KillEffectPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(kill_effect_system.after(EffectProducer));
+        app.add_system(
+            kill_effect_system
+                .label(EffectOutcome)
+                .after(EffectProducer),
+        );
     }
 }
 
