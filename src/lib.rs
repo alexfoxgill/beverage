@@ -6,6 +6,7 @@ use hex2d::*;
 use wasm_bindgen::prelude::*;
 
 pub mod actions;
+pub mod ai;
 pub mod animation;
 pub mod common;
 pub mod effects;
@@ -15,6 +16,7 @@ pub mod map;
 pub mod turn_queue;
 
 use actions::*;
+use ai::*;
 use animation::*;
 use common::*;
 use effects::*;
@@ -44,24 +46,10 @@ impl Plugin for GamePlugin {
             .init_resource::<TurnQueue>()
             .add_plugin(ActionPlugin)
             .add_plugin(EffectPlugin)
+            .add_plugin(AiPlugin)
+            .add_plugin(IntentionPlugin)
             .add_startup_system(setup)
-            .add_system(ingame_keyboard_input.label("produce_intention"))
-            .add_system_set(
-                SystemSet::on_update(AnimatingState::Still)
-                    .with_system(generate_ai_intentions)
-                    .label("produce_intention"),
-            )
-            .add_system(
-                process_intention
-                    .label("process_intention")
-                    .label(ActionProducer)
-                    .after("produce_intention"),
-            )
-            .add_system(
-                cycle_turn_queue
-                    .label("process_actions")
-                    .after(EffectOutcome),
-            )
+            .add_system(cycle_turn_queue.after(EffectOutcome))
             .add_system(
                 animate_movement
                     .label("run_animations")

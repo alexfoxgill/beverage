@@ -1,15 +1,28 @@
 use bevy::prelude::*;
 
 use hex2d::*;
-use rand::prelude::*;
 
 use crate::actions::attack_action::AttackAction;
 use crate::actions::end_turn_action::EndTurnAction;
 use crate::actions::move_action::MoveAction;
 use crate::actions::rotate_action::RotateAction;
 use crate::actions::ActionEvent;
+use crate::actions::ActionProducer;
 use crate::common::*;
 use crate::turn_queue::*;
+
+pub struct IntentionPlugin;
+
+impl Plugin for IntentionPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_system(ingame_keyboard_input.label(IntentionProducer))
+            .add_system(
+                process_intention
+                    .label(ActionProducer)
+                    .after(IntentionProducer),
+            );
+    }
+}
 
 pub struct IntentionEvent(Entity, Intention);
 
@@ -20,6 +33,9 @@ pub enum Intention {
     Attack(Angle),
     EndTurn,
 }
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq, SystemLabel)]
+pub struct IntentionProducer;
 
 pub fn ingame_keyboard_input(
     keys: Res<Input<KeyCode>>,
@@ -48,23 +64,6 @@ pub fn ingame_keyboard_input(
                 if keys.just_pressed(KeyCode::Space) {
                     ev_intention.send(IntentionEvent(entity, Intention::Attack(Angle::Forward)));
                 }
-            }
-        }
-    }
-}
-
-pub fn generate_ai_intentions(
-    actors: Query<(&HexPos, &Facing, &Actor)>,
-    turn_queue: Res<TurnQueue>,
-    mut ev_intention: EventWriter<IntentionEvent>,
-) {
-    if let Some(&entity) = turn_queue.queue.front() {
-        if let Ok((_, _, actor)) = actors.get(entity) {
-            if actor.control_source == ControlSource::AI {
-                let rotation = Angle::from_int(rand::thread_rng().gen_range(1..=6));
-
-                ev_intention.send(IntentionEvent(entity, Intention::Rotate(rotation)));
-                ev_intention.send(IntentionEvent(entity, Intention::Move(Angle::Forward)));
             }
         }
     }
