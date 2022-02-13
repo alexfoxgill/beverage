@@ -2,7 +2,7 @@ use crate::{
     domain::effects::energy_cost_effect::{ActionCost, EnergyCostEffect},
     turn_engine::{
         actions::{Action, ActionEvent},
-        effects::EffectEvent,
+        effects::{EffectEvent, EffectQueue},
         Handled, TurnSchedules,
     },
 };
@@ -43,6 +43,6 @@ fn setup(mut schedules: ResMut<TurnSchedules>) {
     schedules.register_action_handler::<EndTurnAction>(schedule)
 }
 
-fn handler(action: Res<Handled<EndTurnAction>>, mut effects: EventWriter<EffectEvent>) {
-    effects.send(EnergyCostEffect::event(action.0.entity, ActionCost::All));
+fn handler(action: Res<Handled<EndTurnAction>>, mut effects: ResMut<EffectQueue>) {
+    effects.push(EnergyCostEffect::event(action.0.entity, ActionCost::All));
 }

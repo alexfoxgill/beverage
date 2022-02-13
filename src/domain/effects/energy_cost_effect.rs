@@ -2,11 +2,11 @@ use bevy::prelude::*;
 
 use crate::common::Actor;
 
-use crate::turn_engine::Handled;
 use crate::turn_engine::{
     effects::{Effect, EffectEvent},
     EffectDispatcher,
 };
+use crate::turn_engine::{Handled, TurnSchedules};
 
 #[derive(Debug, Clone)]
 pub struct EnergyCostEffect {
@@ -40,37 +40,33 @@ pub struct EnergyCostEffectPlugin;
 
 impl Plugin for EnergyCostEffectPlugin {
     fn build(&self, app: &mut App) {
-        app.stage(EffectDispatcher, |stage: &mut SystemStage| {
-            stage.add_system(energy_cost_effect_system)
-        });
+        app.add_startup_system(setup);
     }
 }
 
-fn energy_cost_effect_system(
-    mut actors: Query<&mut Actor>,
-    mut event_reader: EventReader<EffectEvent>,
-) {
-    for effect in event_reader
-        .iter()
-        .filter_map(|e| e.as_effect::<EnergyCostEffect>())
-    {
-        println!("Enacting energy cost for {:?}", effect.entity);
-        match effect.cost {
-            ActionCost::All => {
-                if let Ok(mut actor) = actors.get_mut(effect.entity) {
-                    actor.actions_remaining = 0;
-                }
+fn setup(mut schedules: ResMut<TurnSchedules>) {
+    let mut schedule = Schedule::default();
+    schedule.add_stage("only", SystemStage::single_threaded().with_system(handler));
+    schedules.register_effect_handler::<EnergyCostEffect>(schedule)
+}
+
+fn handler(mut actors: Query<&mut Actor>, effect: Res<Handled<EnergyCostEffect>>) {
+    println!("Enacting energy cost for {:?}", effect.0.entity);
+    match effect.0.cost {
+        ActionCost::All => {
+            if let Ok(mut actor) = actors.get_mut(effect.0.entity) {
+                actor.actions_remaining = 0;
             }
-            ActionCost::Fixed(cost) => {
-                if let Ok(mut actor) = actors.get_mut(effect.entity) {
-                    actor.actions_remaining = if cost < actor.actions_remaining {
-                        actor.actions_remaining - cost
-                    } else {
-                        0
-                    };
-                }
-            }
-            ActionCost::None => (),
         }
+        ActionCost::Fixed(cost) => {
+            if let Ok(mut actor) = actors.get_mut(effect.0.entity) {
+                actor.actions_remaining = if cost < actor.actions_remaining {
+                    actor.actions_remaining - cost
+                } else {
+                    0
+                };
+            }
+        }
+        ActionCost::None => (),
     }
 }

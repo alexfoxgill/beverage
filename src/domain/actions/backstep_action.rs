@@ -7,7 +7,7 @@ use crate::{
     map::MapTile,
     turn_engine::{
         actions::{Action, ActionEvent},
-        effects::EffectEvent,
+        effects::{EffectEvent, EffectQueue},
         Handled, TurnSchedules,
     },
 };
@@ -52,6 +52,7 @@ fn handler(
     map_tiles: Query<&HexPos, With<MapTile>>,
     action: Res<Handled<BackstepAction>>,
     mut effects: EventWriter<EffectEvent>,
+    mut effect_queue: ResMut<EffectQueue>,
 ) {
     if let Ok((actor, pos, facing)) = actors.get(action.0.entity) {
         let cost = 2;
@@ -59,7 +60,7 @@ fn handler(
             let to = pos.get_facing(-facing.0);
 
             if map_tiles.iter().any(|x| x.0 == to) {
-                effects.send(EnergyCostEffect::event(
+                effect_queue.push(EnergyCostEffect::event(
                     action.0.entity,
                     ActionCost::Fixed(cost),
                 ));

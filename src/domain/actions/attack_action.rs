@@ -5,7 +5,7 @@ use crate::{
     },
     turn_engine::{
         actions::{Action, ActionEvent},
-        effects::EffectEvent,
+        effects::{EffectEvent, EffectQueue},
         Handled, TurnSchedules,
     },
 };
@@ -47,7 +47,11 @@ fn setup(mut schedules: ResMut<TurnSchedules>) {
     schedules.register_action_handler::<AttackAction>(schedule)
 }
 
-fn handler(action: Res<Handled<AttackAction>>, mut effects: EventWriter<EffectEvent>) {
-    effects.send(EnergyCostEffect::event(action.0.attacker, ActionCost::All));
+fn handler(
+    action: Res<Handled<AttackAction>>,
+    mut effects: EventWriter<EffectEvent>,
+    mut effect_queue: ResMut<EffectQueue>,
+) {
+    effect_queue.push(EnergyCostEffect::event(action.0.attacker, ActionCost::All));
     effects.send(KillEffect::event(action.0.victim));
 }

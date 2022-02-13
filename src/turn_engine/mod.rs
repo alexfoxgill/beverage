@@ -4,7 +4,7 @@ use bevy::{prelude::*, utils::HashMap};
 
 use self::{
     actions::{Action, ActionQueue},
-    effects::{EffectEvent, EffectQueue},
+    effects::{Effect, EffectEvent, EffectQueue},
 };
 
 pub mod actions;
@@ -19,6 +19,10 @@ pub struct TurnSchedules {
 impl TurnSchedules {
     pub fn register_action_handler<T: Action + 'static>(&mut self, schedule: Schedule) {
         self.actions.insert(TypeId::of::<T>(), schedule);
+    }
+
+    pub fn register_effect_handler<T: Effect + 'static>(&mut self, schedule: Schedule) {
+        self.effects.insert(TypeId::of::<T>(), schedule);
     }
 }
 
