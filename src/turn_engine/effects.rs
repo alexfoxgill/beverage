@@ -1,20 +1,21 @@
-use std::any::{Any, TypeId};
+use std::any::TypeId;
 
 use std::collections::VecDeque;
 
 use bevy::prelude::World;
+use downcast_rs::*;
 
-pub trait Effect: Send + Sync + std::fmt::Debug {
-    fn as_any(&self) -> &dyn Any;
+pub trait Effect: Downcast + Send + Sync + std::fmt::Debug {
     fn insert_resource(&self, world: &mut World);
 }
+impl_downcast!(Effect);
 
 #[derive(Debug)]
-pub struct EffectEvent(pub Box<dyn Effect>);
+pub struct AnyEffect(pub Box<dyn Effect>);
 
-impl EffectEvent {
+impl AnyEffect {
     pub fn inner_type(&self) -> TypeId {
-        self.0.as_any().type_id()
+        (&*self.0).as_any().type_id()
     }
 
     pub fn insert_resource(&self, world: &mut World) {
@@ -23,14 +24,14 @@ impl EffectEvent {
 }
 
 #[derive(Default)]
-pub struct EffectQueue(pub VecDeque<EffectEvent>);
+pub struct EffectQueue(pub VecDeque<AnyEffect>);
 
 impl EffectQueue {
-    pub fn pop(&mut self) -> Option<EffectEvent> {
+    pub fn pop(&mut self) -> Option<AnyEffect> {
         self.0.pop_front()
     }
 
     pub fn push<T: Effect + 'static>(&mut self, effect: T) {
-        self.0.push_back(EffectEvent(Box::new(effect)));
+        self.0.push_back(AnyEffect(Box::new(effect)));
     }
 }

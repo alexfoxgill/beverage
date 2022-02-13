@@ -153,6 +153,7 @@ dependencies = [
  "bevy_ecs",
  "bevy_prototype_lyon",
  "console_error_panic_hook",
+ "downcast-rs",
  "getrandom",
  "hex2d",
  "rand",

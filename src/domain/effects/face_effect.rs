@@ -18,10 +18,6 @@ impl FaceEffect {
 }
 
 impl Effect for FaceEffect {
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
-    }
-
     fn insert_resource(&self, world: &mut World) {
         world.insert_resource(Handled(self.clone()));
     }
