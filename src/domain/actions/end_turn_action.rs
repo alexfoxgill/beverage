@@ -1,10 +1,8 @@
 use crate::{
-    domain::effects::energy_cost_effect::{EnergyCostEffect, ActionCost},
+    domain::effects::energy_cost_effect::{ActionCost, EnergyCostEffect},
     turn_engine::{
-        actions::{
-            action_queue::{ActionSchedules, CurrentAction},
-            Action, ActionEvent,
-        },
+        action_queue::{ActionSchedules, CurrentAction},
+        actions::{Action, ActionEvent},
         effects::EffectEvent,
     },
 };

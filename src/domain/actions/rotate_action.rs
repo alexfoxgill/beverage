@@ -2,10 +2,8 @@ use crate::{
     common::*,
     domain::effects::face_effect::FaceEffect,
     turn_engine::{
-        actions::{
-            action_queue::{ActionSchedules, CurrentAction},
-            Action, ActionEvent,
-        },
+        action_queue::{ActionSchedules, CurrentAction},
+        actions::{Action, ActionEvent},
         effects::EffectEvent,
     },
 };

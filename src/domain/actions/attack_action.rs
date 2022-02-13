@@ -4,10 +4,8 @@ use crate::{
         kill_effect::KillEffect,
     },
     turn_engine::{
-        actions::{
-            action_queue::{ActionSchedules, CurrentAction},
-            Action, ActionEvent,
-        },
+        action_queue::{ActionSchedules, CurrentAction},
+        actions::{Action, ActionEvent},
         effects::EffectEvent,
     },
 };

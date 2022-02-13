@@ -1,6 +1,6 @@
 use std::{any::TypeId, collections::VecDeque};
 
-use super::{Action, ActionEvent};
+use super::actions::{Action, ActionEvent};
 use bevy::{prelude::*, utils::HashMap};
 
 #[derive(Default)]

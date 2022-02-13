@@ -3,6 +3,7 @@ use bevy::prelude::*;
 use self::{actions::ActionPlugin, effects::EffectPlugin};
 
 pub mod actions;
+pub mod action_queue;
 pub mod effects;
 
 pub struct TurnEnginePlugin;
