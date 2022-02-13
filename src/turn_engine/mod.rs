@@ -4,7 +4,7 @@ use bevy::{prelude::*, utils::HashMap};
 
 use self::{
     actions::{Action, ActionQueue},
-    effects::{Effect, EffectEvent, EffectQueue},
+    effects::{Effect, EffectQueue},
 };
 
 pub mod actions;
@@ -67,10 +67,7 @@ impl Stage for TurnExecutorLoop {
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, StageLabel)]
-pub struct ActionDispatcher;
-
-#[derive(Debug, Clone, Hash, PartialEq, Eq, StageLabel)]
-pub struct EffectDispatcher;
+pub struct TurnExecution;
 
 pub struct TurnEnginePlugin;
 
@@ -79,8 +76,6 @@ impl Plugin for TurnEnginePlugin {
         app.init_resource::<TurnSchedules>()
             .init_resource::<ActionQueue>()
             .init_resource::<EffectQueue>()
-            .add_stage_after(CoreStage::Update, ActionDispatcher, TurnExecutorLoop)
-            .add_event::<EffectEvent>()
-            .add_stage_after(ActionDispatcher, EffectDispatcher, SystemStage::parallel());
+            .add_stage_after(CoreStage::Update, TurnExecution, TurnExecutorLoop);
     }
 }

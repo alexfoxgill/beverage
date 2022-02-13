@@ -2,7 +2,7 @@ use crate::{
     domain::effects::energy_cost_effect::{ActionCost, EnergyCostEffect},
     turn_engine::{
         actions::{Action, ActionEvent},
-        effects::{EffectEvent, EffectQueue},
+        effects::EffectQueue,
         Handled, TurnSchedules,
     },
 };

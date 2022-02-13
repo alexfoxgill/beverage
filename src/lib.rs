@@ -48,7 +48,7 @@ impl Plugin for GamePlugin {
             .add_plugin(AiPlugin)
             .add_plugin(IntentionPlugin)
             .add_stage_after(
-                EffectDispatcher,
+                TurnExecution,
                 "blah",
                 SystemStage::parallel()
                     .with_system(animate_movement.label("run_animations"))

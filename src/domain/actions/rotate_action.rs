@@ -3,7 +3,7 @@ use crate::{
     domain::effects::face_effect::FaceEffect,
     turn_engine::{
         actions::{Action, ActionEvent},
-        effects::EffectEvent,
+        effects::EffectQueue,
         Handled, TurnSchedules,
     },
 };
@@ -45,6 +45,6 @@ fn setup(mut schedules: ResMut<TurnSchedules>) {
     schedules.register_action_handler::<RotateAction>(schedule)
 }
 
-fn handler(action: Res<Handled<RotateAction>>, mut effects: EventWriter<EffectEvent>) {
-    effects.send(FaceEffect::event(action.0.entity, action.0.to));
+fn handler(action: Res<Handled<RotateAction>>, mut effect_queue: ResMut<EffectQueue>) {
+    effect_queue.push(FaceEffect::event(action.0.entity, action.0.to));
 }

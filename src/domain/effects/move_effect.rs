@@ -5,7 +5,7 @@ use crate::{
     common::HexPos,
     turn_engine::{
         effects::{Effect, EffectEvent},
-        EffectDispatcher, Handled,
+        Handled, TurnSchedules,
     },
 };
 
@@ -35,22 +35,18 @@ pub struct MoveEffectPlugin;
 
 impl Plugin for MoveEffectPlugin {
     fn build(&self, app: &mut App) {
-        app.stage(EffectDispatcher, |stage: &mut SystemStage| {
-            stage.add_system(move_effect_system)
-        });
+        app.add_startup_system(setup);
     }
 }
 
-fn move_effect_system(
-    mut positions: Query<&mut HexPos>,
-    mut event_reader: EventReader<EffectEvent>,
-) {
-    for effect in event_reader
-        .iter()
-        .filter_map(|e| e.as_effect::<MoveEffect>())
-    {
-        if let Ok(mut pos) = positions.get_mut(effect.entity) {
-            pos.0 = effect.to;
-        }
+fn setup(mut schedules: ResMut<TurnSchedules>) {
+    let mut schedule = Schedule::default();
+    schedule.add_stage("only", SystemStage::single_threaded().with_system(handler));
+    schedules.register_effect_handler::<MoveEffect>(schedule)
+}
+
+fn handler(mut positions: Query<&mut HexPos>, effect: Res<Handled<MoveEffect>>) {
+    if let Ok(mut pos) = positions.get_mut(effect.0.entity) {
+        pos.0 = effect.0.to;
     }
 }

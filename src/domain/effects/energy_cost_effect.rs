@@ -2,10 +2,7 @@ use bevy::prelude::*;
 
 use crate::common::Actor;
 
-use crate::turn_engine::{
-    effects::{Effect, EffectEvent},
-    EffectDispatcher,
-};
+use crate::turn_engine::effects::{Effect, EffectEvent};
 use crate::turn_engine::{Handled, TurnSchedules};
 
 #[derive(Debug, Clone)]
@@ -51,7 +48,6 @@ fn setup(mut schedules: ResMut<TurnSchedules>) {
 }
 
 fn handler(mut actors: Query<&mut Actor>, effect: Res<Handled<EnergyCostEffect>>) {
-    println!("Enacting energy cost for {:?}", effect.0.entity);
     match effect.0.cost {
         ActionCost::All => {
             if let Ok(mut actor) = actors.get_mut(effect.0.entity) {

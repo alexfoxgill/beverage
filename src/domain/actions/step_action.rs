@@ -7,7 +7,7 @@ use crate::{
     map::MapTile,
     turn_engine::{
         actions::{Action, ActionEvent},
-        effects::{EffectEvent, EffectQueue},
+        effects::EffectQueue,
         Handled, TurnSchedules,
     },
 };
@@ -51,7 +51,6 @@ fn handler(
     actors: Query<(&Actor, &HexPos, &Facing)>,
     map_tiles: Query<&HexPos, With<MapTile>>,
     action: Res<Handled<StepAction>>,
-    mut effects: EventWriter<EffectEvent>,
     mut effect_queue: ResMut<EffectQueue>,
 ) {
     if let Ok((actor, pos, facing)) = actors.get(action.0.entity) {
@@ -64,7 +63,7 @@ fn handler(
                     action.0.entity,
                     ActionCost::Fixed(cost),
                 ));
-                effects.send(MoveEffect::event(action.0.entity, to));
+                effect_queue.push(MoveEffect::event(action.0.entity, to));
             }
         }
     }
