@@ -11,21 +11,21 @@ pub mod actions;
 pub mod effects;
 
 #[derive(Default)]
-pub struct ActionSchedules(pub HashMap<TypeId, Schedule>);
+pub struct TurnSchedules(HashMap<TypeId, Schedule>);
 
-impl ActionSchedules {
-    pub fn register_handler<T: Action + 'static>(&mut self, schedule: Schedule) {
+impl TurnSchedules {
+    pub fn register_action_handler<T: Action + 'static>(&mut self, schedule: Schedule) {
         self.0.insert(TypeId::of::<T>(), schedule);
     }
 }
 
-pub struct CurrentAction<T>(pub T);
+pub struct Handled<T>(pub T);
 
 pub struct ActionDispatcherStage;
 
 impl Stage for ActionDispatcherStage {
     fn run(&mut self, world: &mut World) {
-        world.resource_scope(|world, mut schedules: Mut<ActionSchedules>| loop {
+        world.resource_scope(|world, mut schedules: Mut<TurnSchedules>| loop {
             let mut action_queue = world.get_resource_mut::<ActionQueue>().unwrap();
             if let Some(action) = action_queue.0.pop_front() {
                 let type_id = action.inner_type();
@@ -42,38 +42,20 @@ impl Stage for ActionDispatcherStage {
     }
 }
 
-pub struct TurnEnginePlugin;
-
-impl Plugin for TurnEnginePlugin {
-    fn build(&self, app: &mut App) {
-        app.add_plugin(ActionPlugin).add_plugin(EffectPlugin);
-    }
-}
-
 #[derive(Debug, Clone, Hash, PartialEq, Eq, StageLabel)]
 pub struct ActionDispatcher;
-
-pub struct ActionPlugin;
-
-impl Plugin for ActionPlugin {
-    fn build(&self, app: &mut App) {
-        app.init_resource::<ActionSchedules>()
-            .init_resource::<ActionQueue>()
-            .add_stage_after(CoreStage::Update, ActionDispatcher, ActionDispatcherStage);
-    }
-}
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, StageLabel)]
 pub struct EffectDispatcher;
 
-pub struct EffectPlugin;
+pub struct TurnEnginePlugin;
 
-impl Plugin for EffectPlugin {
+impl Plugin for TurnEnginePlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<EffectEvent>().add_stage_after(
-            ActionDispatcher,
-            EffectDispatcher,
-            SystemStage::parallel(),
-        );
+        app.init_resource::<TurnSchedules>()
+            .init_resource::<ActionQueue>()
+            .add_stage_after(CoreStage::Update, ActionDispatcher, ActionDispatcherStage)
+            .add_event::<EffectEvent>()
+            .add_stage_after(ActionDispatcher, EffectDispatcher, SystemStage::parallel());
     }
 }

@@ -4,7 +4,7 @@ use crate::{
     turn_engine::{
         actions::{Action, ActionEvent},
         effects::EffectEvent,
-        ActionSchedules, CurrentAction,
+        Handled, TurnSchedules,
     },
 };
 use bevy::prelude::*;
@@ -27,7 +27,7 @@ impl Action for RotateAction {
     }
 
     fn insert_resource(&self, world: &mut World) {
-        let action = CurrentAction(self.clone());
+        let action = Handled(self.clone());
         world.insert_resource(action)
     }
 }
@@ -40,12 +40,12 @@ impl Plugin for RotateActionPlugin {
     }
 }
 
-fn setup(mut schedules: ResMut<ActionSchedules>) {
+fn setup(mut schedules: ResMut<TurnSchedules>) {
     let mut schedule = Schedule::default();
     schedule.add_stage("only", SystemStage::single_threaded().with_system(handler));
-    schedules.register_handler::<RotateAction>(schedule)
+    schedules.register_action_handler::<RotateAction>(schedule)
 }
 
-fn handler(action: Res<CurrentAction<RotateAction>>, mut effects: EventWriter<EffectEvent>) {
+fn handler(action: Res<Handled<RotateAction>>, mut effects: EventWriter<EffectEvent>) {
     effects.send(FaceEffect::event(action.0.entity, action.0.to));
 }

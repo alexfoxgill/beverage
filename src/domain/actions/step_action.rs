@@ -8,7 +8,7 @@ use crate::{
     turn_engine::{
         actions::{Action, ActionEvent},
         effects::EffectEvent,
-        ActionSchedules, CurrentAction,
+        Handled, TurnSchedules,
     },
 };
 use bevy::prelude::*;
@@ -29,7 +29,7 @@ impl Action for StepAction {
     }
 
     fn insert_resource(&self, world: &mut World) {
-        let action = CurrentAction(self.clone());
+        let action = Handled(self.clone());
         world.insert_resource(action)
     }
 }
@@ -42,16 +42,16 @@ impl Plugin for StepActionPlugin {
     }
 }
 
-fn setup(mut schedules: ResMut<ActionSchedules>) {
+fn setup(mut schedules: ResMut<TurnSchedules>) {
     let schedule =
         Schedule::default().with_stage("only", SystemStage::single_threaded().with_system(handler));
-    schedules.register_handler::<StepAction>(schedule)
+    schedules.register_action_handler::<StepAction>(schedule)
 }
 
 fn handler(
     actors: Query<(&Actor, &HexPos, &Facing)>,
     map_tiles: Query<&HexPos, With<MapTile>>,
-    action: Res<CurrentAction<StepAction>>,
+    action: Res<Handled<StepAction>>,
     mut effects: EventWriter<EffectEvent>,
 ) {
     if let Ok((actor, pos, facing)) = actors.get(action.0.entity) {
