@@ -5,11 +5,11 @@ use crate::{
     common::HexPos,
     turn_engine::{
         effects::{Effect, EffectEvent},
-        EffectDispatcher,
+        EffectDispatcher, Handled,
     },
 };
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct MoveEffect {
     entity: Entity,
     to: Coordinate,
@@ -24,6 +24,10 @@ impl MoveEffect {
 impl Effect for MoveEffect {
     fn as_any(&self) -> &dyn std::any::Any {
         self
+    }
+
+    fn insert_resource(&self, world: &mut World) {
+        world.insert_resource(Handled(self.clone()));
     }
 }
 

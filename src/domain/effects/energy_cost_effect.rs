@@ -2,18 +2,19 @@ use bevy::prelude::*;
 
 use crate::common::Actor;
 
+use crate::turn_engine::Handled;
 use crate::turn_engine::{
     effects::{Effect, EffectEvent},
     EffectDispatcher,
 };
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct EnergyCostEffect {
     pub entity: Entity,
     pub cost: ActionCost,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ActionCost {
     All,
     Fixed(u8),
@@ -29,6 +30,9 @@ impl EnergyCostEffect {
 impl Effect for EnergyCostEffect {
     fn as_any(&self) -> &dyn std::any::Any {
         self
+    }
+    fn insert_resource(&self, world: &mut World) {
+        world.insert_resource(Handled(self.clone()));
     }
 }
 

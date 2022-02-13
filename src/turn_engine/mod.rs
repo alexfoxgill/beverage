@@ -4,39 +4,59 @@ use bevy::{prelude::*, utils::HashMap};
 
 use self::{
     actions::{Action, ActionQueue},
-    effects::EffectEvent,
+    effects::{EffectEvent, EffectQueue},
 };
 
 pub mod actions;
 pub mod effects;
 
 #[derive(Default)]
-pub struct TurnSchedules(HashMap<TypeId, Schedule>);
+pub struct TurnSchedules {
+    actions: HashMap<TypeId, Schedule>,
+    effects: HashMap<TypeId, Schedule>,
+}
 
 impl TurnSchedules {
     pub fn register_action_handler<T: Action + 'static>(&mut self, schedule: Schedule) {
-        self.0.insert(TypeId::of::<T>(), schedule);
+        self.actions.insert(TypeId::of::<T>(), schedule);
     }
 }
 
 pub struct Handled<T>(pub T);
 
-pub struct ActionDispatcherStage;
+pub struct TurnExecutorLoop;
 
-impl Stage for ActionDispatcherStage {
+impl Stage for TurnExecutorLoop {
     fn run(&mut self, world: &mut World) {
-        world.resource_scope(|world, mut schedules: Mut<TurnSchedules>| loop {
+        world.resource_scope(|world, mut schedules: Mut<TurnSchedules>| 'actions: loop {
             let mut action_queue = world.get_resource_mut::<ActionQueue>().unwrap();
             if let Some(action) = action_queue.0.pop_front() {
-                let type_id = action.inner_type();
-                if let Some(schedule) = schedules.0.get_mut(&type_id) {
+                let action_type = action.inner_type();
+                if let Some(action_schedule) = schedules.actions.get_mut(&action_type) {
                     action.insert_resource(world);
-                    schedule.run(world);
+                    action_schedule.run(world);
                 } else {
-                    println!("Could not find scheduler for {:?}", type_id);
+                    println!("Could not find scheduler for {:?}", action_type);
+                    continue 'actions;
+                }
+
+                'effects: loop {
+                    let mut effect_queue = world.get_resource_mut::<EffectQueue>().unwrap();
+                    if let Some(effect) = effect_queue.0.pop_front() {
+                        let effect_type = effect.inner_type();
+                        if let Some(effect_schedule) = schedules.effects.get_mut(&effect_type) {
+                            effect.insert_resource(world);
+                            effect_schedule.run(world);
+                        } else {
+                            println!("Could not find scheduler for {:?}", effect_type);
+                            continue 'effects;
+                        }
+                    } else {
+                        break 'effects;
+                    }
                 }
             } else {
-                break;
+                break 'actions;
             }
         });
     }
@@ -54,7 +74,8 @@ impl Plugin for TurnEnginePlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<TurnSchedules>()
             .init_resource::<ActionQueue>()
-            .add_stage_after(CoreStage::Update, ActionDispatcher, ActionDispatcherStage)
+            .init_resource::<EffectQueue>()
+            .add_stage_after(CoreStage::Update, ActionDispatcher, TurnExecutorLoop)
             .add_event::<EffectEvent>()
             .add_stage_after(ActionDispatcher, EffectDispatcher, SystemStage::parallel());
     }

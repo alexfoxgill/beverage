@@ -2,10 +2,10 @@ use bevy::prelude::*;
 
 use crate::turn_engine::{
     effects::{Effect, EffectEvent},
-    EffectDispatcher,
+    EffectDispatcher, Handled,
 };
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct KillEffect {
     entity: Entity,
 }
@@ -19,6 +19,10 @@ impl KillEffect {
 impl Effect for KillEffect {
     fn as_any(&self) -> &dyn std::any::Any {
         self
+    }
+
+    fn insert_resource(&self, world: &mut World) {
+        world.insert_resource(Handled(self.clone()));
     }
 }
 

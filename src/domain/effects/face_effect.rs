@@ -2,12 +2,13 @@ use bevy::prelude::*;
 
 use crate::common::{Facing, HexDirection};
 
+use crate::turn_engine::Handled;
 use crate::turn_engine::{
     effects::{Effect, EffectEvent},
     EffectDispatcher,
 };
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct FaceEffect {
     entity: Entity,
     face: HexDirection,
@@ -22,6 +23,10 @@ impl FaceEffect {
 impl Effect for FaceEffect {
     fn as_any(&self) -> &dyn std::any::Any {
         self
+    }
+    
+    fn insert_resource(&self, world: &mut World) {
+        world.insert_resource(Handled(self.clone()));
     }
 }
 

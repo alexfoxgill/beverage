@@ -29,8 +29,7 @@ impl Action for AttackAction {
     }
 
     fn insert_resource(&self, world: &mut World) {
-        let action = Handled(self.clone());
-        world.insert_resource(action)
+        world.insert_resource(Handled(self.clone()));
     }
 }
 
