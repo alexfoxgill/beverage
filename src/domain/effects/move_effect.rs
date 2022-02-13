@@ -19,7 +19,7 @@ impl MoveEffect {
 }
 
 impl Effect for MoveEffect {
-    fn insert_resource(&self, world: &mut World) {
+    fn insert_handled(&self, world: &mut World) {
         world.insert_resource(Handled(self.clone()));
     }
 }

@@ -25,7 +25,7 @@ impl EnergyCostEffect {
 }
 
 impl Effect for EnergyCostEffect {
-    fn insert_resource(&self, world: &mut World) {
+    fn insert_handled(&self, world: &mut World) {
         world.insert_resource(Handled(self.clone()));
     }
 }

@@ -4,6 +4,11 @@ use std::collections::VecDeque;
 use bevy::prelude::*;
 use downcast_rs::*;
 
+pub trait Action: Downcast + Send + Sync + std::fmt::Debug {
+    fn insert_handled(&self, world: &mut World);
+}
+impl_downcast!(Action);
+
 #[derive(Debug)]
 pub struct AnyAction(pub Box<dyn Action>);
 
@@ -12,15 +17,10 @@ impl AnyAction {
         (&*self.0).as_any().type_id()
     }
 
-    pub fn insert_resource(&self, world: &mut World) {
-        self.0.insert_resource(world);
+    pub fn insert_handled(&self, world: &mut World) {
+        self.0.insert_handled(world);
     }
 }
-
-pub trait Action: Downcast + Send + Sync + std::fmt::Debug {
-    fn insert_resource(&self, world: &mut World);
-}
-impl_downcast!(Action);
 
 #[derive(Default)]
 pub struct ActionQueue(pub VecDeque<AnyAction>);

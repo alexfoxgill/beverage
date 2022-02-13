@@ -6,7 +6,7 @@ use bevy::prelude::World;
 use downcast_rs::*;
 
 pub trait Effect: Downcast + Send + Sync + std::fmt::Debug {
-    fn insert_resource(&self, world: &mut World);
+    fn insert_handled(&self, world: &mut World);
 }
 impl_downcast!(Effect);
 
@@ -18,8 +18,8 @@ impl AnyEffect {
         (&*self.0).as_any().type_id()
     }
 
-    pub fn insert_resource(&self, world: &mut World) {
-        self.0.insert_resource(world);
+    pub fn insert_handled(&self, world: &mut World) {
+        self.0.insert_handled(world);
     }
 }
 
