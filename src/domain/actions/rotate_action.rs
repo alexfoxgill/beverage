@@ -42,5 +42,5 @@ fn setup(mut schedules: ResMut<TurnSchedules>) {
 }
 
 fn handler(action: Res<Handled<RotateAction>>, mut effect_queue: ResMut<EffectQueue>) {
-    effect_queue.push(FaceEffect::event(action.0.entity, action.0.to));
+    effect_queue.push(FaceEffect::new(action.0.entity, action.0.to));
 }

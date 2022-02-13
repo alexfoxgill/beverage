@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::common::{Facing, HexDirection};
 
-use crate::turn_engine::effects::{Effect, EffectEvent};
+use crate::turn_engine::effects::Effect;
 use crate::turn_engine::{Handled, TurnSchedules};
 
 #[derive(Debug, Clone)]
@@ -12,8 +12,8 @@ pub struct FaceEffect {
 }
 
 impl FaceEffect {
-    pub fn event(entity: Entity, face: HexDirection) -> EffectEvent {
-        EffectEvent(Box::new(FaceEffect { entity, face }))
+    pub fn new(entity: Entity, face: HexDirection) -> FaceEffect {
+        FaceEffect { entity, face }
     }
 }
 

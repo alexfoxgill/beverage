@@ -44,6 +44,6 @@ fn setup(mut schedules: ResMut<TurnSchedules>) {
 }
 
 fn handler(action: Res<Handled<AttackAction>>, mut effect_queue: ResMut<EffectQueue>) {
-    effect_queue.push(EnergyCostEffect::event(action.0.attacker, ActionCost::All));
-    effect_queue.push(KillEffect::event(action.0.victim));
+    effect_queue.push(EnergyCostEffect::new(action.0.attacker, ActionCost::All));
+    effect_queue.push(KillEffect::new(action.0.victim));
 }

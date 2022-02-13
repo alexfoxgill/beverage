@@ -40,5 +40,5 @@ fn setup(mut schedules: ResMut<TurnSchedules>) {
 }
 
 fn handler(action: Res<Handled<EndTurnAction>>, mut effects: ResMut<EffectQueue>) {
-    effects.push(EnergyCostEffect::event(action.0.entity, ActionCost::All));
+    effects.push(EnergyCostEffect::new(action.0.entity, ActionCost::All));
 }

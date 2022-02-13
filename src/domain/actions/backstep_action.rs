@@ -55,11 +55,11 @@ fn handler(
             let to = pos.get_facing(-facing.0);
 
             if map_tiles.iter().any(|x| x.0 == to) {
-                effect_queue.push(EnergyCostEffect::event(
+                effect_queue.push(EnergyCostEffect::new(
                     action.0.entity,
                     ActionCost::Fixed(cost),
                 ));
-                effect_queue.push(MoveEffect::event(action.0.entity, to));
+                effect_queue.push(MoveEffect::new(action.0.entity, to));
             }
         }
     }

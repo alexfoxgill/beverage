@@ -3,10 +3,7 @@ use hex2d::Coordinate;
 
 use crate::{
     common::HexPos,
-    turn_engine::{
-        effects::{Effect, EffectEvent},
-        Handled, TurnSchedules,
-    },
+    turn_engine::{effects::Effect, Handled, TurnSchedules},
 };
 
 #[derive(Debug, Clone)]
@@ -16,8 +13,8 @@ pub struct MoveEffect {
 }
 
 impl MoveEffect {
-    pub fn event(entity: Entity, to: Coordinate) -> EffectEvent {
-        EffectEvent(Box::new(MoveEffect { entity, to }))
+    pub fn new(entity: Entity, to: Coordinate) -> MoveEffect {
+        MoveEffect { entity, to }
     }
 }
 

@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::common::Actor;
 
-use crate::turn_engine::effects::{Effect, EffectEvent};
+use crate::turn_engine::effects::Effect;
 use crate::turn_engine::{Handled, TurnSchedules};
 
 #[derive(Debug, Clone)]
@@ -19,8 +19,8 @@ pub enum ActionCost {
 }
 
 impl EnergyCostEffect {
-    pub fn event(entity: Entity, cost: ActionCost) -> EffectEvent {
-        EffectEvent(Box::new(EnergyCostEffect { entity, cost }))
+    pub fn new(entity: Entity, cost: ActionCost) -> EnergyCostEffect {
+        EnergyCostEffect { entity, cost }
     }
 }
 

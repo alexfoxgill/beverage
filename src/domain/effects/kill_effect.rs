@@ -1,9 +1,6 @@
 use bevy::prelude::*;
 
-use crate::turn_engine::{
-    effects::{Effect, EffectEvent},
-    Handled, TurnSchedules,
-};
+use crate::turn_engine::{effects::Effect, Handled, TurnSchedules};
 
 #[derive(Debug, Clone)]
 pub struct KillEffect {
@@ -11,8 +8,8 @@ pub struct KillEffect {
 }
 
 impl KillEffect {
-    pub fn event(entity: Entity) -> EffectEvent {
-        EffectEvent(Box::new(KillEffect { entity }))
+    pub fn new(entity: Entity) -> KillEffect {
+        KillEffect { entity }
     }
 }
 
