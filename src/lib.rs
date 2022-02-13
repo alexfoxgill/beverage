@@ -5,23 +5,24 @@ use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*, shapes::Circle};
 use hex2d::*;
 use wasm_bindgen::prelude::*;
 
-pub mod actions;
 pub mod ai;
 pub mod animation;
 pub mod common;
-pub mod effects;
 pub mod hex_map;
 pub mod intention;
 pub mod map;
+pub mod turn_engine;
 pub mod turn_queue;
+pub mod domain;
 
-use actions::*;
 use ai::*;
 use animation::*;
 use common::*;
-use effects::*;
+use domain::*;
 use intention::*;
 use map::*;
+use turn_engine::effects::*;
+use turn_engine::*;
 use turn_queue::*;
 
 #[wasm_bindgen]
@@ -43,19 +44,20 @@ impl Plugin for GamePlugin {
             .add_state(AnimatingState::Still)
             .init_resource::<TurnQueue>()
             .add_plugin(MapPlugin)
-            .add_plugin(ActionPlugin)
-            .add_plugin(EffectPlugin)
+            .add_plugin(TurnEnginePlugin)
+            .add_plugin(DomainPlugin)
             .add_plugin(AiPlugin)
             .add_plugin(IntentionPlugin)
-            .add_startup_system(setup.after(SpawnMap))
-            .add_system(cycle_turn_queue.after(EffectOutcome))
-            .add_system(
-                animate_movement
-                    .label("run_animations")
-                    .after(EffectOutcome),
+            .add_stage_after(
+                EffectDispatcher,
+                "blah",
+                SystemStage::parallel()
+                    .with_system(animate_movement.label("run_animations"))
+                    .with_system(cycle_turn_queue)
+                    .with_system(update_animating_state.after("run_animations")),
             )
-            .add_system(update_animating_state.after("run_animations"))
-            .add_system(bevy::input::system::exit_on_esc_system);
+            .add_system(bevy::input::system::exit_on_esc_system)
+            .add_startup_system(setup.after(SpawnMap));
     }
 }
 

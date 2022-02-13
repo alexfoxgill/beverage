@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::common::Actor;
 
-use super::{Effect, EffectEvent, EffectOutcome, EffectProducer};
+use crate::turn_engine::effects::{Effect, EffectDispatcher, EffectEvent};
 
 #[derive(Debug)]
 pub struct EnergyCostEffect {
@@ -33,11 +33,9 @@ pub struct EnergyCostEffectPlugin;
 
 impl Plugin for EnergyCostEffectPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(
-            energy_cost_effect_system
-                .label(EffectOutcome)
-                .after(EffectProducer),
-        );
+        app.stage(EffectDispatcher, |stage: &mut SystemStage| {
+            stage.add_system(energy_cost_effect_system)
+        });
     }
 }
 
@@ -49,6 +47,7 @@ fn energy_cost_effect_system(
         .iter()
         .filter_map(|e| e.as_effect::<EnergyCostEffect>())
     {
+        println!("Enacting energy cost for {:?}", effect.entity);
         match effect.cost {
             ActionCost::All => {
                 if let Ok(mut actor) = actors.get_mut(effect.entity) {

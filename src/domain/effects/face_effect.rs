@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::common::{Facing, HexDirection};
 
-use super::{Effect, EffectEvent, EffectOutcome, EffectProducer};
+use crate::turn_engine::effects::{Effect, EffectDispatcher, EffectEvent};
 
 #[derive(Debug)]
 pub struct FaceEffect {
@@ -26,11 +26,9 @@ pub struct FaceEffectPlugin;
 
 impl Plugin for FaceEffectPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(
-            face_effect_system
-                .label(EffectOutcome)
-                .after(EffectProducer),
-        );
+        app.stage(EffectDispatcher, |stage: &mut SystemStage| {
+            stage.add_system(face_effect_system)
+        });
     }
 }
 

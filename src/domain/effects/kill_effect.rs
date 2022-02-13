@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use super::{Effect, EffectEvent, EffectOutcome, EffectProducer};
+use crate::turn_engine::effects::{EffectDispatcher, EffectEvent, Effect};
 
 #[derive(Debug)]
 pub struct KillEffect {
@@ -23,11 +23,9 @@ pub struct KillEffectPlugin;
 
 impl Plugin for KillEffectPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(
-            kill_effect_system
-                .label(EffectOutcome)
-                .after(EffectProducer),
-        );
+        app.stage(EffectDispatcher, |stage: &mut SystemStage| {
+            stage.add_system(kill_effect_system)
+        });
     }
 }
 

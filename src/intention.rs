@@ -2,13 +2,13 @@ use bevy::prelude::*;
 
 use hex2d::*;
 
-use crate::actions::attack_action::AttackAction;
-use crate::actions::end_turn_action::EndTurnAction;
-use crate::actions::move_action::MoveAction;
-use crate::actions::rotate_action::RotateAction;
-use crate::actions::ActionEvent;
-use crate::actions::ActionProducer;
 use crate::common::*;
+use crate::domain::actions::attack_action::AttackAction;
+use crate::domain::actions::backstep_action::BackstepAction;
+use crate::domain::actions::end_turn_action::EndTurnAction;
+use crate::domain::actions::rotate_action::RotateAction;
+use crate::domain::actions::step_action::StepAction;
+use crate::turn_engine::actions::action_queue::ActionQueue;
 use crate::turn_queue::*;
 
 pub struct IntentionPlugin;
@@ -17,28 +17,25 @@ impl Plugin for IntentionPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<IntentionEvent>()
             .add_system(ingame_keyboard_input.label(IntentionProducer))
-            .add_system(
-                process_intention
-                    .label(ActionProducer)
-                    .after(IntentionProducer),
-            );
+            .add_system(process_intention.after(IntentionProducer));
     }
 }
 
-pub struct IntentionEvent(Entity, Intention);
+struct IntentionEvent(Entity, Intention);
 
 #[derive(Debug)]
-pub enum Intention {
+enum Intention {
+    Step,
+    Backstep,
     Rotate(Angle),
-    Move(Angle),
     Attack(Angle),
     EndTurn,
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, SystemLabel)]
-pub struct IntentionProducer;
+struct IntentionProducer;
 
-pub fn ingame_keyboard_input(
+fn ingame_keyboard_input(
     keys: Res<Input<KeyCode>>,
     actors: Query<&Actor>,
     turn_queue: Res<TurnQueue>,
@@ -54,10 +51,10 @@ pub fn ingame_keyboard_input(
                     ev_intention.send(IntentionEvent(entity, Intention::Rotate(Angle::Right)));
                 }
                 if keys.just_pressed(KeyCode::Up) {
-                    ev_intention.send(IntentionEvent(entity, Intention::Move(Angle::Forward)));
+                    ev_intention.send(IntentionEvent(entity, Intention::Step));
                 }
                 if keys.just_pressed(KeyCode::Down) {
-                    ev_intention.send(IntentionEvent(entity, Intention::Move(Angle::Back)));
+                    ev_intention.send(IntentionEvent(entity, Intention::Backstep));
                 }
                 if keys.just_pressed(KeyCode::E) {
                     ev_intention.send(IntentionEvent(entity, Intention::EndTurn));
@@ -70,10 +67,10 @@ pub fn ingame_keyboard_input(
     }
 }
 
-pub fn process_intention(
+fn process_intention(
     mut actors: Query<(&Facing, &HexPos, Entity)>,
     mut ev_intention: EventReader<IntentionEvent>,
-    mut ev_action: EventWriter<ActionEvent>,
+    mut ev_action: ResMut<ActionQueue>,
 ) {
     for IntentionEvent(entity, intention) in ev_intention.iter() {
         let (facing, pos, _) = actors.get_mut(*entity).unwrap();
@@ -81,22 +78,23 @@ pub fn process_intention(
         match intention {
             Intention::Rotate(angle) => {
                 let target = facing.rotated(*angle);
-                ev_action.send(RotateAction::event(*entity, target));
+                ev_action.push(RotateAction::event(*entity, target));
             }
-            Intention::Move(angle) => {
-                let dir = facing.rotated(*angle);
-                let target = pos.get_facing(dir);
-                ev_action.send(MoveAction::event(*entity, target));
+            Intention::Step => {
+                ev_action.push(StepAction::event(*entity));
+            }
+            Intention::Backstep => {
+                ev_action.push(BackstepAction::event(*entity));
             }
             Intention::EndTurn => {
-                ev_action.send(EndTurnAction::event(*entity));
+                ev_action.push(EndTurnAction::event(*entity));
             }
             Intention::Attack(angle) => {
                 let direction = facing.rotated(*angle);
                 let coord_to_attack = pos.get_facing(direction);
                 for (_, pos, e) in actors.iter() {
                     if pos.0 == coord_to_attack {
-                        ev_action.send(AttackAction::event(*entity, e));
+                        ev_action.push(AttackAction::event(*entity, e));
                     }
                 }
             }

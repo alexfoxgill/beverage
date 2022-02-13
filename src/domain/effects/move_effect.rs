@@ -1,9 +1,10 @@
 use bevy::prelude::*;
 use hex2d::Coordinate;
 
-use crate::common::HexPos;
-
-use super::{Effect, EffectEvent, EffectOutcome, EffectProducer};
+use crate::{
+    common::HexPos,
+    turn_engine::effects::{Effect, EffectDispatcher, EffectEvent},
+};
 
 #[derive(Debug)]
 pub struct MoveEffect {
@@ -27,11 +28,9 @@ pub struct MoveEffectPlugin;
 
 impl Plugin for MoveEffectPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(
-            move_effect_system
-                .label(EffectOutcome)
-                .after(EffectProducer),
-        );
+        app.stage(EffectDispatcher, |stage: &mut SystemStage| {
+            stage.add_system(move_effect_system)
+        });
     }
 }
 
