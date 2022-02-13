@@ -6,7 +6,7 @@ use bevy::prelude::World;
 use downcast_rs::*;
 
 pub trait Effect: Downcast + Send + Sync + std::fmt::Debug {
-    fn insert_handled(&self, world: &mut World);
+    fn insert_handled(self: Box<Self>, world: &mut World);
 }
 impl_downcast!(Effect);
 
@@ -16,10 +16,6 @@ pub struct AnyEffect(pub Box<dyn Effect>);
 impl AnyEffect {
     pub fn inner_type(&self) -> TypeId {
         (&*self.0).as_any().type_id()
-    }
-
-    pub fn insert_handled(&self, world: &mut World) {
-        self.0.insert_handled(world);
     }
 }
 

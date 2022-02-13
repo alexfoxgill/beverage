@@ -6,7 +6,7 @@ use crate::{
     turn_engine::{effects::Effect, Handled, TurnSchedules},
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct MoveEffect {
     entity: Entity,
     to: Coordinate,
@@ -19,8 +19,8 @@ impl MoveEffect {
 }
 
 impl Effect for MoveEffect {
-    fn insert_handled(&self, world: &mut World) {
-        world.insert_resource(Handled(self.clone()));
+    fn insert_handled(self: Box<Self>, world: &mut World) {
+        world.insert_resource(Handled(*self));
     }
 }
 

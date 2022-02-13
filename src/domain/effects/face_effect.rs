@@ -5,7 +5,7 @@ use crate::common::{Facing, HexDirection};
 use crate::turn_engine::effects::Effect;
 use crate::turn_engine::{Handled, TurnSchedules};
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct FaceEffect {
     entity: Entity,
     face: HexDirection,
@@ -18,8 +18,8 @@ impl FaceEffect {
 }
 
 impl Effect for FaceEffect {
-    fn insert_handled(&self, world: &mut World) {
-        world.insert_resource(Handled(self.clone()));
+    fn insert_handled(self: Box<Self>, world: &mut World) {
+        world.insert_resource(Handled(*self));
     }
 }
 

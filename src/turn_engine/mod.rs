@@ -37,7 +37,7 @@ impl Stage for TurnExecutorLoop {
             if let Some(action) = action_queue.0.pop_front() {
                 let action_type = action.inner_type();
                 if let Some(action_schedule) = schedules.actions.get_mut(&action_type) {
-                    action.insert_handled(world);
+                    action.0.insert_handled(world);
                     action_schedule.run(world);
                 } else {
                     eprintln!("Could not find scheduler for action {:?}", action_type);
@@ -49,7 +49,7 @@ impl Stage for TurnExecutorLoop {
                     if let Some(effect) = effect_queue.0.pop_front() {
                         let effect_type = effect.inner_type();
                         if let Some(effect_schedule) = schedules.effects.get_mut(&effect_type) {
-                            effect.insert_handled(world);
+                            effect.0.insert_handled(world);
                             effect_schedule.run(world);
                         } else {
                             eprintln!("Could not find scheduler for effect {:?}", effect_type);

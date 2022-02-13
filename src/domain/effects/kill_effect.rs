@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::turn_engine::{effects::Effect, Handled, TurnSchedules};
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct KillEffect {
     entity: Entity,
 }
@@ -14,8 +14,8 @@ impl KillEffect {
 }
 
 impl Effect for KillEffect {
-    fn insert_handled(&self, world: &mut World) {
-        world.insert_resource(Handled(self.clone()));
+    fn insert_handled(self: Box<Self>, world: &mut World) {
+        world.insert_resource(Handled(*self));
     }
 }
 

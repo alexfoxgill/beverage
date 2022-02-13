@@ -9,7 +9,7 @@ use crate::{
 };
 use bevy::prelude::*;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct BackstepAction {
     entity: Entity,
 }
@@ -20,8 +20,8 @@ impl BackstepAction {
     }
 }
 impl Action for BackstepAction {
-    fn insert_handled(&self, world: &mut World) {
-        world.insert_resource(Handled(self.clone()));
+    fn insert_handled(self: Box<Self>, world: &mut World) {
+        world.insert_resource(Handled(*self));
     }
 }
 

@@ -5,7 +5,7 @@ use bevy::prelude::*;
 use downcast_rs::*;
 
 pub trait Action: Downcast + Send + Sync + std::fmt::Debug {
-    fn insert_handled(&self, world: &mut World);
+    fn insert_handled(self: Box<Self>, world: &mut World);
 }
 impl_downcast!(Action);
 
@@ -15,10 +15,6 @@ pub struct AnyAction(pub Box<dyn Action>);
 impl AnyAction {
     pub fn inner_type(&self) -> TypeId {
         (&*self.0).as_any().type_id()
-    }
-
-    pub fn insert_handled(&self, world: &mut World) {
-        self.0.insert_handled(world);
     }
 }
 

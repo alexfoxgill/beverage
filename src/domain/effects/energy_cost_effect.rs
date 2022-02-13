@@ -5,7 +5,7 @@ use crate::common::Actor;
 use crate::turn_engine::effects::Effect;
 use crate::turn_engine::{Handled, TurnSchedules};
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct EnergyCostEffect {
     pub entity: Entity,
     pub cost: ActionCost,
@@ -25,8 +25,8 @@ impl EnergyCostEffect {
 }
 
 impl Effect for EnergyCostEffect {
-    fn insert_handled(&self, world: &mut World) {
-        world.insert_resource(Handled(self.clone()));
+    fn insert_handled(self: Box<Self>, world: &mut World) {
+        world.insert_resource(Handled(*self));
     }
 }
 
