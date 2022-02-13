@@ -2,7 +2,10 @@ use bevy::prelude::*;
 
 use crate::common::Actor;
 
-use crate::turn_engine::effects::{Effect, EffectDispatcher, EffectEvent};
+use crate::turn_engine::{
+    effects::{Effect, EffectEvent},
+    EffectDispatcher,
+};
 
 #[derive(Debug)]
 pub struct EnergyCostEffect {

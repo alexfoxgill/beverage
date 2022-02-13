@@ -3,7 +3,10 @@ use hex2d::Coordinate;
 
 use crate::{
     common::HexPos,
-    turn_engine::effects::{Effect, EffectDispatcher, EffectEvent},
+    turn_engine::{
+        effects::{Effect, EffectEvent},
+        EffectDispatcher,
+    },
 };
 
 #[derive(Debug)]

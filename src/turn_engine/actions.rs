@@ -1,8 +1,7 @@
 use std::any::{Any, TypeId};
+use std::collections::VecDeque;
 
 use bevy::prelude::*;
-
-use super::action_queue::{ActionDispatcherStage, ActionQueue, ActionSchedules};
 
 #[derive(Debug)]
 pub struct ActionEvent(pub Box<dyn Action>);
@@ -26,15 +25,15 @@ pub trait Action: Send + Sync + std::fmt::Debug {
     fn insert_resource(&self, world: &mut World);
 }
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq, StageLabel)]
-pub struct ActionDispatcher;
+#[derive(Default)]
+pub struct ActionQueue(pub VecDeque<ActionEvent>);
 
-pub struct ActionPlugin;
+impl ActionQueue {
+    pub fn pop(&mut self) -> Option<ActionEvent> {
+        self.0.pop_front()
+    }
 
-impl Plugin for ActionPlugin {
-    fn build(&self, app: &mut App) {
-        app.init_resource::<ActionSchedules>()
-            .init_resource::<ActionQueue>()
-            .add_stage_after(CoreStage::Update, ActionDispatcher, ActionDispatcherStage);
+    pub fn push(&mut self, action: ActionEvent) {
+        self.0.push_back(action);
     }
 }

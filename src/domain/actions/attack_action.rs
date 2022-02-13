@@ -4,9 +4,9 @@ use crate::{
         kill_effect::KillEffect,
     },
     turn_engine::{
-        action_queue::{ActionSchedules, CurrentAction},
         actions::{Action, ActionEvent},
         effects::EffectEvent,
+        ActionSchedules, CurrentAction,
     },
 };
 use bevy::prelude::*;

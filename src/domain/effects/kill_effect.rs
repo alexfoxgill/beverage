@@ -1,6 +1,9 @@
 use bevy::prelude::*;
 
-use crate::turn_engine::effects::{EffectDispatcher, EffectEvent, Effect};
+use crate::turn_engine::{
+    effects::{Effect, EffectEvent},
+    EffectDispatcher,
+};
 
 #[derive(Debug)]
 pub struct KillEffect {

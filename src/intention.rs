@@ -8,7 +8,7 @@ use crate::domain::actions::backstep_action::BackstepAction;
 use crate::domain::actions::end_turn_action::EndTurnAction;
 use crate::domain::actions::rotate_action::RotateAction;
 use crate::domain::actions::step_action::StepAction;
-use crate::turn_engine::action_queue::ActionQueue;
+use crate::turn_engine::actions::ActionQueue;
 use crate::turn_queue::*;
 
 pub struct IntentionPlugin;
