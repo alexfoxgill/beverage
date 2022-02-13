@@ -78,23 +78,23 @@ fn process_intention(
         match intention {
             Intention::Rotate(angle) => {
                 let target = facing.rotated(*angle);
-                ev_action.push(RotateAction::event(*entity, target));
+                ev_action.push(RotateAction::new(*entity, target));
             }
             Intention::Step => {
-                ev_action.push(StepAction::event(*entity));
+                ev_action.push(StepAction::new(*entity));
             }
             Intention::Backstep => {
-                ev_action.push(BackstepAction::event(*entity));
+                ev_action.push(BackstepAction::new(*entity));
             }
             Intention::EndTurn => {
-                ev_action.push(EndTurnAction::event(*entity));
+                ev_action.push(EndTurnAction::new(*entity));
             }
             Intention::Attack(angle) => {
                 let direction = facing.rotated(*angle);
                 let coord_to_attack = pos.get_facing(direction);
                 for (_, pos, e) in actors.iter() {
                     if pos.0 == coord_to_attack {
-                        ev_action.push(AttackAction::event(*entity, e));
+                        ev_action.push(AttackAction::new(*entity, e));
                     }
                 }
             }

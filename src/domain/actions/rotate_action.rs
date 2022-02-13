@@ -1,11 +1,7 @@
 use crate::{
     common::*,
     domain::effects::face_effect::FaceEffect,
-    turn_engine::{
-        actions::{Action, ActionEvent},
-        effects::EffectQueue,
-        Handled, TurnSchedules,
-    },
+    turn_engine::{actions::Action, effects::EffectQueue, Handled, TurnSchedules},
 };
 use bevy::prelude::*;
 
@@ -16,8 +12,8 @@ pub struct RotateAction {
 }
 
 impl RotateAction {
-    pub fn event(entity: Entity, to: HexDirection) -> ActionEvent {
-        ActionEvent(Box::new(RotateAction { entity, to }))
+    pub fn new(entity: Entity, to: HexDirection) -> RotateAction {
+        RotateAction { entity, to }
     }
 }
 

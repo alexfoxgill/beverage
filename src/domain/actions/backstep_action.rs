@@ -5,11 +5,7 @@ use crate::{
         move_effect::MoveEffect,
     },
     map::MapTile,
-    turn_engine::{
-        actions::{Action, ActionEvent},
-        effects::{EffectQueue},
-        Handled, TurnSchedules,
-    },
+    turn_engine::{actions::Action, effects::EffectQueue, Handled, TurnSchedules},
 };
 use bevy::prelude::*;
 
@@ -19,8 +15,8 @@ pub struct BackstepAction {
 }
 
 impl BackstepAction {
-    pub fn event(entity: Entity) -> ActionEvent {
-        ActionEvent(Box::new(BackstepAction { entity }))
+    pub fn new(entity: Entity) -> BackstepAction {
+        BackstepAction { entity }
     }
 }
 impl Action for BackstepAction {

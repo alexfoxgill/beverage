@@ -1,10 +1,6 @@
 use crate::{
     domain::effects::energy_cost_effect::{ActionCost, EnergyCostEffect},
-    turn_engine::{
-        actions::{Action, ActionEvent},
-        effects::EffectQueue,
-        Handled, TurnSchedules,
-    },
+    turn_engine::{actions::Action, effects::EffectQueue, Handled, TurnSchedules},
 };
 use bevy::prelude::*;
 
@@ -14,8 +10,8 @@ pub struct EndTurnAction {
 }
 
 impl EndTurnAction {
-    pub fn event(entity: Entity) -> ActionEvent {
-        ActionEvent(Box::new(EndTurnAction { entity }))
+    pub fn new(entity: Entity) -> EndTurnAction {
+        EndTurnAction { entity }
     }
 }
 

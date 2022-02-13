@@ -33,7 +33,7 @@ impl ActionQueue {
         self.0.pop_front()
     }
 
-    pub fn push(&mut self, action: ActionEvent) {
-        self.0.push_back(action);
+    pub fn push<T: Action + 'static>(&mut self, action: T) {
+        self.0.push_back(ActionEvent(Box::new(action)));
     }
 }

@@ -32,8 +32,8 @@ pub fn generate_ai_actions(
                 let rotation = Angle::from_int(rand::thread_rng().gen_range(1..=6));
 
                 let target = facing.rotated(rotation);
-                actions.push(RotateAction::event(entity, target));
-                actions.push(StepAction::event(entity));
+                actions.push(RotateAction::new(entity, target));
+                actions.push(StepAction::new(entity));
             }
         }
     }

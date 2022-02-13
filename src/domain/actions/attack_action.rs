@@ -3,11 +3,7 @@ use crate::{
         energy_cost_effect::{ActionCost, EnergyCostEffect},
         kill_effect::KillEffect,
     },
-    turn_engine::{
-        actions::{Action, ActionEvent},
-        effects::EffectQueue,
-        Handled, TurnSchedules,
-    },
+    turn_engine::{actions::Action, effects::EffectQueue, Handled, TurnSchedules},
 };
 use bevy::prelude::*;
 
@@ -18,8 +14,8 @@ pub struct AttackAction {
 }
 
 impl AttackAction {
-    pub fn event(attacker: Entity, victim: Entity) -> ActionEvent {
-        ActionEvent(Box::new(AttackAction { attacker, victim }))
+    pub fn new(attacker: Entity, victim: Entity) -> AttackAction {
+        AttackAction { attacker, victim }
     }
 }
 
