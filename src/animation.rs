@@ -59,11 +59,9 @@ pub fn update_animating_state(
     match (is_animating, current_state) {
         (true, AnimatingState::Still) => {
             state.set(AnimatingState::Animating).unwrap();
-            println!("Animating")
         }
         (false, AnimatingState::Animating) => {
             state.set(AnimatingState::Still).unwrap();
-            println!("Still")
         }
         _ => (),
     }

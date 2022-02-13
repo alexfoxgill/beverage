@@ -40,7 +40,7 @@ impl Stage for TurnExecutorLoop {
                     action.insert_resource(world);
                     action_schedule.run(world);
                 } else {
-                    println!("Could not find scheduler for {:?}", action_type);
+                    eprintln!("Could not find scheduler for action {:?}", action_type);
                     continue 'actions;
                 }
 
@@ -52,7 +52,7 @@ impl Stage for TurnExecutorLoop {
                             effect.insert_resource(world);
                             effect_schedule.run(world);
                         } else {
-                            println!("Could not find scheduler for {:?}", effect_type);
+                            eprintln!("Could not find scheduler for effect {:?}", effect_type);
                             continue 'effects;
                         }
                     } else {
