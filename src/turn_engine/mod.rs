@@ -45,6 +45,7 @@ where
                 self.initialized = true;
             }
             self.system.run(*action, world);
+            self.system.apply_buffers(world);
         }
     }
 }
@@ -60,6 +61,7 @@ where
                 self.initialized = true;
             }
             self.system.run(*effect, world);
+            self.system.apply_buffers(world);
         }
     }
 }
