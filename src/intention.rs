@@ -27,8 +27,9 @@ struct IntentionEvent(Entity, Intention);
 enum Intention {
     Step,
     Backstep,
-    Rotate(Angle),
-    Attack(Angle),
+    TurnLeft,
+    TurnRight,
+    Strike,
     EndTurn,
 }
 
@@ -45,10 +46,10 @@ fn ingame_keyboard_input(
         if let Ok(actor) = actors.get(entity) {
             if actor.control_source == ControlSource::Player {
                 if keys.just_pressed(KeyCode::Left) {
-                    ev_intention.send(IntentionEvent(entity, Intention::Rotate(Angle::Left)));
+                    ev_intention.send(IntentionEvent(entity, Intention::TurnLeft));
                 }
                 if keys.just_pressed(KeyCode::Right) {
-                    ev_intention.send(IntentionEvent(entity, Intention::Rotate(Angle::Right)));
+                    ev_intention.send(IntentionEvent(entity, Intention::TurnRight));
                 }
                 if keys.just_pressed(KeyCode::Up) {
                     ev_intention.send(IntentionEvent(entity, Intention::Step));
@@ -60,7 +61,7 @@ fn ingame_keyboard_input(
                     ev_intention.send(IntentionEvent(entity, Intention::EndTurn));
                 }
                 if keys.just_pressed(KeyCode::Space) {
-                    ev_intention.send(IntentionEvent(entity, Intention::Attack(Angle::Forward)));
+                    ev_intention.send(IntentionEvent(entity, Intention::Strike));
                 }
             }
         }
@@ -76,21 +77,13 @@ fn process_intention(
         let (facing, pos, _) = actors.get_mut(*entity).unwrap();
 
         match intention {
-            Intention::Rotate(angle) => {
-                ev_action.push(RotateAction::new(*entity, *angle));
-            }
-            Intention::Step => {
-                ev_action.push(StepAction::new(*entity));
-            }
-            Intention::Backstep => {
-                ev_action.push(BackstepAction::new(*entity));
-            }
-            Intention::EndTurn => {
-                ev_action.push(EndTurnAction::new(*entity));
-            }
-            Intention::Attack(angle) => {
-                let direction = facing.rotated(*angle);
-                let coord_to_attack = pos.get_facing(direction);
+            Intention::TurnLeft => ev_action.push(RotateAction::new(*entity, Angle::Left)),
+            Intention::TurnRight => ev_action.push(RotateAction::new(*entity, Angle::Right)),
+            Intention::Step => ev_action.push(StepAction::new(*entity)),
+            Intention::Backstep => ev_action.push(BackstepAction::new(*entity)),
+            Intention::EndTurn => ev_action.push(EndTurnAction::new(*entity)),
+            Intention::Strike => {
+                let coord_to_attack = pos.get_facing(facing.0);
                 for (_, pos, e) in actors.iter() {
                     if pos.0 == coord_to_attack {
                         ev_action.push(AttackAction::new(*entity, e));
