@@ -27,12 +27,11 @@ pub fn generate_ai_actions(
     mut actions: ResMut<ActionQueue>,
 ) {
     if let Some(&entity) = turn_queue.head() {
-        if let Ok((_pos, facing, actor)) = actors.get(entity) {
+        if let Ok((_pos, _facing, actor)) = actors.get(entity) {
             if actor.control_source == ControlSource::AI && actor.actions_remaining > 0 {
                 let rotation = Angle::from_int(rand::thread_rng().gen_range(1..=6));
 
-                let target = facing.rotated(rotation);
-                actions.push(RotateAction::new(entity, target));
+                actions.push(RotateAction::new(entity, rotation));
                 actions.push(StepAction::new(entity));
             }
         }

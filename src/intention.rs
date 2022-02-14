@@ -77,8 +77,7 @@ fn process_intention(
 
         match intention {
             Intention::Rotate(angle) => {
-                let target = facing.rotated(*angle);
-                ev_action.push(RotateAction::new(*entity, target));
+                ev_action.push(RotateAction::new(*entity, *angle));
             }
             Intention::Step => {
                 ev_action.push(StepAction::new(*entity));

@@ -4,13 +4,14 @@ use crate::{
     turn_engine::{actions::Action, effects::EffectQueue, TurnSystems},
 };
 use bevy::prelude::*;
+use hex2d::Angle;
 
 #[derive(Debug)]
-pub struct RotateAction(Entity, HexDirection);
+pub struct RotateAction(Entity, Angle);
 
 impl RotateAction {
-    pub fn new(entity: Entity, to: HexDirection) -> RotateAction {
-        RotateAction(entity, to)
+    pub fn new(entity: Entity, by: Angle) -> RotateAction {
+        RotateAction(entity, by)
     }
 }
 
@@ -28,6 +29,13 @@ fn setup(mut systems: ResMut<TurnSystems>) {
     systems.register_action_handler(handler.system())
 }
 
-fn handler(In(RotateAction(entity, to)): In<RotateAction>, mut effect_queue: ResMut<EffectQueue>) {
-    effect_queue.push(FaceEffect::new(entity, to));
+fn handler(
+    In(RotateAction(entity, by)): In<RotateAction>,
+    query: Query<&Facing>,
+    mut effect_queue: ResMut<EffectQueue>,
+) {
+    if let Ok(facing) = query.get(entity) {
+        let target = facing.rotated(by);
+        effect_queue.push(FaceEffect::new(entity, target));
+    }
 }
