@@ -3,7 +3,7 @@ use hex2d::Coordinate;
 
 use crate::{
     common::HexPos,
-    turn_engine::{effects::Effect, Handled, TurnSchedules},
+    turn_engine::{effects::Effect, TurnSchedules},
 };
 
 #[derive(Debug)]
@@ -18,11 +18,7 @@ impl MoveEffect {
     }
 }
 
-impl Effect for MoveEffect {
-    fn insert_handled(self: Box<Self>, world: &mut World) {
-        world.insert_resource(Handled(*self));
-    }
-}
+impl Effect for MoveEffect {}
 
 pub struct MoveEffectPlugin;
 
@@ -33,12 +29,10 @@ impl Plugin for MoveEffectPlugin {
 }
 
 fn setup(mut schedules: ResMut<TurnSchedules>) {
-    let mut schedule = Schedule::default();
-    schedule.add_stage("only", SystemStage::single_threaded().with_system(handler));
-    schedules.register_effect_handler::<MoveEffect>(schedule)
+    schedules.register_effect_handler(handler.system());
 }
 
-fn handler(mut positions: Query<&mut HexPos>, effect: Res<Handled<MoveEffect>>) {
+fn handler(effect: In<MoveEffect>, mut positions: Query<&mut HexPos>) {
     if let Ok(mut pos) = positions.get_mut(effect.0.entity) {
         pos.0 = effect.0.to;
     }

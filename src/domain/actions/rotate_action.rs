@@ -1,7 +1,7 @@
 use crate::{
     common::*,
     domain::effects::face_effect::FaceEffect,
-    turn_engine::{actions::Action, effects::EffectQueue, Handled, TurnSchedules},
+    turn_engine::{actions::Action, effects::EffectQueue, TurnSchedules},
 };
 use bevy::prelude::*;
 
@@ -17,11 +17,7 @@ impl RotateAction {
     }
 }
 
-impl Action for RotateAction {
-    fn insert_handled(self: Box<Self>, world: &mut World) {
-        world.insert_resource(Handled(*self));
-    }
-}
+impl Action for RotateAction {}
 
 pub struct RotateActionPlugin;
 

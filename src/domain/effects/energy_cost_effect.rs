@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use crate::common::Actor;
 
 use crate::turn_engine::effects::Effect;
-use crate::turn_engine::{Handled, TurnSchedules};
+use crate::turn_engine::TurnSchedules;
 
 #[derive(Debug)]
 pub struct EnergyCostEffect {
@@ -24,11 +24,7 @@ impl EnergyCostEffect {
     }
 }
 
-impl Effect for EnergyCostEffect {
-    fn insert_handled(self: Box<Self>, world: &mut World) {
-        world.insert_resource(Handled(*self));
-    }
-}
+impl Effect for EnergyCostEffect {}
 
 pub struct EnergyCostEffectPlugin;
 
@@ -39,12 +35,10 @@ impl Plugin for EnergyCostEffectPlugin {
 }
 
 fn setup(mut schedules: ResMut<TurnSchedules>) {
-    let mut schedule = Schedule::default();
-    schedule.add_stage("only", SystemStage::single_threaded().with_system(handler));
-    schedules.register_effect_handler::<EnergyCostEffect>(schedule)
+    schedules.register_effect_handler(handler.system());
 }
 
-fn handler(mut actors: Query<&mut Actor>, effect: Res<Handled<EnergyCostEffect>>) {
+fn handler(effect: In<EnergyCostEffect>, mut actors: Query<&mut Actor>) {
     match effect.0.cost {
         ActionCost::All => {
             if let Ok(mut actor) = actors.get_mut(effect.0.entity) {

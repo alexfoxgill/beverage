@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::turn_engine::{effects::Effect, Handled, TurnSchedules};
+use crate::turn_engine::{effects::Effect, TurnSchedules};
 
 #[derive(Debug)]
 pub struct KillEffect {
@@ -13,11 +13,7 @@ impl KillEffect {
     }
 }
 
-impl Effect for KillEffect {
-    fn insert_handled(self: Box<Self>, world: &mut World) {
-        world.insert_resource(Handled(*self));
-    }
-}
+impl Effect for KillEffect {}
 
 pub struct KillEffectPlugin;
 
@@ -28,11 +24,9 @@ impl Plugin for KillEffectPlugin {
 }
 
 fn setup(mut schedules: ResMut<TurnSchedules>) {
-    let mut schedule = Schedule::default();
-    schedule.add_stage("only", SystemStage::single_threaded().with_system(handler));
-    schedules.register_effect_handler::<KillEffect>(schedule)
+    schedules.register_effect_handler(handler.system());
 }
 
-fn handler(mut commands: Commands, effect: Res<Handled<KillEffect>>) {
+fn handler(effect: In<KillEffect>, mut commands: Commands) {
     commands.entity(effect.0.entity).despawn_recursive();
 }

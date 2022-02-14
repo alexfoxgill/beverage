@@ -1,13 +1,9 @@
 use std::any::TypeId;
-
 use std::collections::VecDeque;
 
-use bevy::prelude::World;
 use downcast_rs::*;
 
-pub trait Effect: Downcast + Send + Sync + std::fmt::Debug {
-    fn insert_handled(self: Box<Self>, world: &mut World);
-}
+pub trait Effect: Downcast + Send + Sync + std::fmt::Debug {}
 impl_downcast!(Effect);
 
 #[derive(Debug)]

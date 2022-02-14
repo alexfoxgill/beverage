@@ -5,7 +5,7 @@ use crate::{
         move_effect::MoveEffect,
     },
     map::MapTile,
-    turn_engine::{actions::Action, effects::EffectQueue, Handled, TurnSchedules},
+    turn_engine::{actions::Action, effects::EffectQueue, TurnSchedules},
 };
 use bevy::prelude::*;
 
@@ -19,11 +19,7 @@ impl StepAction {
         StepAction { entity }
     }
 }
-impl Action for StepAction {
-    fn insert_handled(self: Box<Self>, world: &mut World) {
-        world.insert_resource(Handled(*self));
-    }
-}
+impl Action for StepAction {}
 
 pub struct StepActionPlugin;
 

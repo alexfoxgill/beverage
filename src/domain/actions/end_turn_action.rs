@@ -1,6 +1,6 @@
 use crate::{
     domain::effects::energy_cost_effect::{ActionCost, EnergyCostEffect},
-    turn_engine::{actions::Action, effects::EffectQueue, Handled, TurnSchedules},
+    turn_engine::{actions::Action, effects::EffectQueue, TurnSchedules},
 };
 use bevy::prelude::*;
 
@@ -15,11 +15,7 @@ impl EndTurnAction {
     }
 }
 
-impl Action for EndTurnAction {
-    fn insert_handled(self: Box<Self>, world: &mut World) {
-        world.insert_resource(Handled(*self));
-    }
-}
+impl Action for EndTurnAction {}
 
 pub struct EndTurnActionPlugin;
 

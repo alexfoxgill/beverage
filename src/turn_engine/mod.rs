@@ -4,7 +4,7 @@ use bevy::{prelude::*, utils::HashMap};
 
 use self::{
     actions::{Action, ActionQueue, AnyAction},
-    effects::{Effect, EffectQueue},
+    effects::{AnyEffect, Effect, EffectQueue},
 };
 
 pub mod actions;
@@ -30,12 +30,15 @@ where
     }
 }
 
-impl<A, S> AnyRunner<AnyAction> for TypedSystemRunner<A, S>
+trait AnyRunner<T>: Send + Sync {
+    fn run(&mut self, input: T, world: &mut World);
+}
+
+impl<A: Action, S> AnyRunner<AnyAction> for TypedSystemRunner<A, S>
 where
-    A: Action,
     S: System<In = A, Out = ()>,
 {
-    fn run_action(&mut self, action: AnyAction, world: &mut World) {
+    fn run(&mut self, action: AnyAction, world: &mut World) {
         if let Ok(action) = action.0.downcast::<A>() {
             if !self.initialized {
                 self.system.initialize(world);
@@ -46,13 +49,24 @@ where
     }
 }
 
-trait AnyRunner<T>: Send + Sync {
-    fn run_action(&mut self, action: T, world: &mut World);
+impl<E: Effect, S> AnyRunner<AnyEffect> for TypedSystemRunner<E, S>
+where
+    S: System<In = E, Out = ()>,
+{
+    fn run(&mut self, effect: AnyEffect, world: &mut World) {
+        if let Ok(effect) = effect.0.downcast::<E>() {
+            if !self.initialized {
+                self.system.initialize(world);
+                self.initialized = true;
+            }
+            self.system.run(*effect, world);
+        }
+    }
 }
 
 #[derive(Default)]
 pub struct TurnSchedules {
-    effects: HashMap<TypeId, Schedule>,
+    effects: HashMap<TypeId, Box<dyn AnyRunner<AnyEffect>>>,
     actions: HashMap<TypeId, Box<dyn AnyRunner<AnyAction>>>,
 }
 
@@ -68,18 +82,29 @@ impl TurnSchedules {
     pub fn run_action_system(&mut self, action: AnyAction, world: &mut World) {
         let action_type = action.inner_type();
         if let Some(handler) = self.actions.get_mut(&action_type) {
-            handler.run_action(action, world);
+            handler.run(action, world);
         } else {
             eprintln!("Could not find scheduler for action {:?}", action_type);
         }
     }
 
-    pub fn register_effect_handler<T: Effect + 'static>(&mut self, schedule: Schedule) {
-        self.effects.insert(TypeId::of::<T>(), schedule);
+    pub fn register_effect_handler<E: Effect + 'static>(
+        &mut self,
+        system: impl System<In = E, Out = ()>,
+    ) {
+        self.effects
+            .insert(TypeId::of::<E>(), Box::new(TypedSystemRunner::new(system)));
+    }
+
+    pub fn run_effect_system(&mut self, effect: AnyEffect, world: &mut World) {
+        let effect_type = effect.inner_type();
+        if let Some(handler) = self.effects.get_mut(&effect_type) {
+            handler.run(effect, world);
+        } else {
+            eprintln!("Could not find scheduler for effect {:?}", effect_type);
+        }
     }
 }
-
-pub struct Handled<T>(pub T);
 
 pub struct TurnExecutorLoop;
 
@@ -93,14 +118,7 @@ impl Stage for TurnExecutorLoop {
                 'effects: loop {
                     let mut effect_queue = world.get_resource_mut::<EffectQueue>().unwrap();
                     if let Some(effect) = effect_queue.0.pop_front() {
-                        let effect_type = effect.inner_type();
-                        if let Some(effect_schedule) = schedules.effects.get_mut(&effect_type) {
-                            effect.0.insert_handled(world);
-                            effect_schedule.run(world);
-                        } else {
-                            eprintln!("Could not find scheduler for effect {:?}", effect_type);
-                            continue 'effects;
-                        }
+                        schedules.run_effect_system(effect, world);
                     } else {
                         break 'effects;
                     }

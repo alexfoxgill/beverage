@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use crate::common::{Facing, HexDirection};
 
 use crate::turn_engine::effects::Effect;
-use crate::turn_engine::{Handled, TurnSchedules};
+use crate::turn_engine::TurnSchedules;
 
 #[derive(Debug)]
 pub struct FaceEffect {
@@ -17,11 +17,7 @@ impl FaceEffect {
     }
 }
 
-impl Effect for FaceEffect {
-    fn insert_handled(self: Box<Self>, world: &mut World) {
-        world.insert_resource(Handled(*self));
-    }
-}
+impl Effect for FaceEffect {}
 
 pub struct FaceEffectPlugin;
 
@@ -32,12 +28,10 @@ impl Plugin for FaceEffectPlugin {
 }
 
 fn setup(mut schedules: ResMut<TurnSchedules>) {
-    let mut schedule = Schedule::default();
-    schedule.add_stage("only", SystemStage::single_threaded().with_system(handler));
-    schedules.register_effect_handler::<FaceEffect>(schedule)
+    schedules.register_effect_handler(handler.system());
 }
 
-fn handler(mut facings: Query<&mut Facing>, effect: Res<Handled<FaceEffect>>) {
+fn handler(effect: In<FaceEffect>, mut facings: Query<&mut Facing>) {
     if let Ok(mut facing) = facings.get_mut(effect.0.entity) {
         facing.0 = effect.0.face;
     }

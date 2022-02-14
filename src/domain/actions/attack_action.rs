@@ -3,7 +3,7 @@ use crate::{
         energy_cost_effect::{ActionCost, EnergyCostEffect},
         kill_effect::KillEffect,
     },
-    turn_engine::{actions::Action, effects::EffectQueue, Handled, TurnSchedules},
+    turn_engine::{actions::Action, effects::EffectQueue, TurnSchedules},
 };
 use bevy::prelude::*;
 
@@ -19,11 +19,7 @@ impl AttackAction {
     }
 }
 
-impl Action for AttackAction {
-    fn insert_handled(self: Box<Self>, world: &mut World) {
-        world.insert_resource(Handled(*self));
-    }
-}
+impl Action for AttackAction {}
 
 pub struct AttackActionPlugin;
 
