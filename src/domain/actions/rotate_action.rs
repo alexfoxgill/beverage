@@ -32,11 +32,9 @@ impl Plugin for RotateActionPlugin {
 }
 
 fn setup(mut schedules: ResMut<TurnSchedules>) {
-    let mut schedule = Schedule::default();
-    schedule.add_stage("only", SystemStage::single_threaded().with_system(handler));
-    schedules.register_action_handler::<RotateAction>(schedule)
+    schedules.register_action_system(handler.system())
 }
 
-fn handler(action: Res<Handled<RotateAction>>, mut effect_queue: ResMut<EffectQueue>) {
+fn handler(action: In<RotateAction>, mut effect_queue: ResMut<EffectQueue>) {
     effect_queue.push(FaceEffect::new(action.0.entity, action.0.to));
 }

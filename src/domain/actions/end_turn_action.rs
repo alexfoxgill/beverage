@@ -30,11 +30,9 @@ impl Plugin for EndTurnActionPlugin {
 }
 
 fn setup(mut schedules: ResMut<TurnSchedules>) {
-    let mut schedule = Schedule::default();
-    schedule.add_stage("only", SystemStage::single_threaded().with_system(handler));
-    schedules.register_action_handler::<EndTurnAction>(schedule)
+    schedules.register_action_system(handler.system())
 }
 
-fn handler(action: Res<Handled<EndTurnAction>>, mut effects: ResMut<EffectQueue>) {
-    effects.push(EnergyCostEffect::new(action.0.entity, ActionCost::All));
+fn handler(In(action): In<EndTurnAction>, mut effects: ResMut<EffectQueue>) {
+    effects.push(EnergyCostEffect::new(action.entity, ActionCost::All));
 }

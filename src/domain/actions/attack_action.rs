@@ -34,12 +34,10 @@ impl Plugin for AttackActionPlugin {
 }
 
 fn setup(mut schedules: ResMut<TurnSchedules>) {
-    let mut schedule = Schedule::default();
-    schedule.add_stage("only", SystemStage::single_threaded().with_system(handler));
-    schedules.register_action_handler::<AttackAction>(schedule)
+    schedules.register_action_system(handler.system())
 }
 
-fn handler(action: Res<Handled<AttackAction>>, mut effect_queue: ResMut<EffectQueue>) {
+fn handler(action: In<AttackAction>, mut effect_queue: ResMut<EffectQueue>) {
     effect_queue.push(EnergyCostEffect::new(action.0.attacker, ActionCost::All));
     effect_queue.push(KillEffect::new(action.0.victim));
 }
