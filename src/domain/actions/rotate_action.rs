@@ -1,7 +1,7 @@
 use crate::{
     common::*,
     domain::effects::face_effect::FaceEffect,
-    turn_engine::{actions::Action, effects::EffectQueue, TurnSchedules},
+    turn_engine::{actions::Action, effects::EffectQueue, TurnSystems},
 };
 use bevy::prelude::*;
 
@@ -27,10 +27,10 @@ impl Plugin for RotateActionPlugin {
     }
 }
 
-fn setup(mut schedules: ResMut<TurnSchedules>) {
-    schedules.register_action_handler(handler.system())
+fn setup(mut systems: ResMut<TurnSystems>) {
+    systems.register_action_handler(handler.system())
 }
 
-fn handler(action: In<RotateAction>, mut effect_queue: ResMut<EffectQueue>) {
-    effect_queue.push(FaceEffect::new(action.0.entity, action.0.to));
+fn handler(In(action): In<RotateAction>, mut effect_queue: ResMut<EffectQueue>) {
+    effect_queue.push(FaceEffect::new(action.entity, action.to));
 }

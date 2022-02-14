@@ -1,6 +1,6 @@
 use crate::{
     domain::effects::energy_cost_effect::{ActionCost, EnergyCostEffect},
-    turn_engine::{actions::Action, effects::EffectQueue, TurnSchedules},
+    turn_engine::{actions::Action, effects::EffectQueue, TurnSystems},
 };
 use bevy::prelude::*;
 
@@ -25,8 +25,8 @@ impl Plugin for EndTurnActionPlugin {
     }
 }
 
-fn setup(mut schedules: ResMut<TurnSchedules>) {
-    schedules.register_action_handler(handler.system())
+fn setup(mut systems: ResMut<TurnSystems>) {
+    systems.register_action_handler(handler.system())
 }
 
 fn handler(In(action): In<EndTurnAction>, mut effects: ResMut<EffectQueue>) {

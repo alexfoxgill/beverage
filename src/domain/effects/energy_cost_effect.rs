@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use crate::common::Actor;
 
 use crate::turn_engine::effects::Effect;
-use crate::turn_engine::TurnSchedules;
+use crate::turn_engine::TurnSystems;
 
 #[derive(Debug)]
 pub struct EnergyCostEffect {
@@ -34,19 +34,19 @@ impl Plugin for EnergyCostEffectPlugin {
     }
 }
 
-fn setup(mut schedules: ResMut<TurnSchedules>) {
-    schedules.register_effect_handler(handler.system());
+fn setup(mut systems: ResMut<TurnSystems>) {
+    systems.register_effect_handler(handler.system());
 }
 
-fn handler(effect: In<EnergyCostEffect>, mut actors: Query<&mut Actor>) {
-    match effect.0.cost {
+fn handler(In(effect): In<EnergyCostEffect>, mut actors: Query<&mut Actor>) {
+    match effect.cost {
         ActionCost::All => {
-            if let Ok(mut actor) = actors.get_mut(effect.0.entity) {
+            if let Ok(mut actor) = actors.get_mut(effect.entity) {
                 actor.actions_remaining = 0;
             }
         }
         ActionCost::Fixed(cost) => {
-            if let Ok(mut actor) = actors.get_mut(effect.0.entity) {
+            if let Ok(mut actor) = actors.get_mut(effect.entity) {
                 actor.actions_remaining = if cost < actor.actions_remaining {
                     actor.actions_remaining - cost
                 } else {

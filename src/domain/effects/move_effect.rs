@@ -3,7 +3,7 @@ use hex2d::Coordinate;
 
 use crate::{
     common::HexPos,
-    turn_engine::{effects::Effect, TurnSchedules},
+    turn_engine::{effects::Effect, TurnSystems},
 };
 
 #[derive(Debug)]
@@ -28,12 +28,12 @@ impl Plugin for MoveEffectPlugin {
     }
 }
 
-fn setup(mut schedules: ResMut<TurnSchedules>) {
-    schedules.register_effect_handler(handler.system());
+fn setup(mut systems: ResMut<TurnSystems>) {
+    systems.register_effect_handler(handler.system());
 }
 
-fn handler(effect: In<MoveEffect>, mut positions: Query<&mut HexPos>) {
-    if let Ok(mut pos) = positions.get_mut(effect.0.entity) {
-        pos.0 = effect.0.to;
+fn handler(In(effect): In<MoveEffect>, mut positions: Query<&mut HexPos>) {
+    if let Ok(mut pos) = positions.get_mut(effect.entity) {
+        pos.0 = effect.to;
     }
 }

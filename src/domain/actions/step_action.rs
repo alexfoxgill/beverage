@@ -5,7 +5,7 @@ use crate::{
         move_effect::MoveEffect,
     },
     map::MapTile,
-    turn_engine::{actions::Action, effects::EffectQueue, TurnSchedules},
+    turn_engine::{actions::Action, effects::EffectQueue, TurnSystems},
 };
 use bevy::prelude::*;
 
@@ -29,27 +29,27 @@ impl Plugin for StepActionPlugin {
     }
 }
 
-fn setup(mut schedules: ResMut<TurnSchedules>) {
-    schedules.register_action_handler(handler.system())
+fn setup(mut systems: ResMut<TurnSystems>) {
+    systems.register_action_handler(handler.system())
 }
 
 fn handler(
-    action: In<StepAction>,
+    In(action): In<StepAction>,
     actors: Query<(&Actor, &HexPos, &Facing)>,
     map_tiles: Query<&HexPos, With<MapTile>>,
     mut effect_queue: ResMut<EffectQueue>,
 ) {
-    if let Ok((actor, pos, facing)) = actors.get(action.0.entity) {
+    if let Ok((actor, pos, facing)) = actors.get(action.entity) {
         let cost = 1;
         if actor.actions_remaining >= cost {
             let to = pos.get_facing(facing.0);
 
             if map_tiles.iter().any(|x| x.0 == to) {
                 effect_queue.push(EnergyCostEffect::new(
-                    action.0.entity,
+                    action.entity,
                     ActionCost::Fixed(cost),
                 ));
-                effect_queue.push(MoveEffect::new(action.0.entity, to));
+                effect_queue.push(MoveEffect::new(action.entity, to));
             }
         }
     }

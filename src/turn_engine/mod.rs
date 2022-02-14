@@ -67,12 +67,12 @@ where
 }
 
 #[derive(Default)]
-pub struct TurnSchedules {
+pub struct TurnSystems {
     effects: HashMap<TypeId, Box<dyn AnyRunner<AnyEffect>>>,
     actions: HashMap<TypeId, Box<dyn AnyRunner<AnyAction>>>,
 }
 
-impl TurnSchedules {
+impl TurnSystems {
     pub fn register_action_handler<A: Action + 'static>(
         &mut self,
         system: impl System<In = A, Out = ()>,
@@ -112,15 +112,15 @@ pub struct TurnExecutorLoop;
 
 impl Stage for TurnExecutorLoop {
     fn run(&mut self, world: &mut World) {
-        world.resource_scope(|world, mut schedules: Mut<TurnSchedules>| 'actions: loop {
+        world.resource_scope(|world, mut systems: Mut<TurnSystems>| 'actions: loop {
             let mut action_queue = world.get_resource_mut::<ActionQueue>().unwrap();
             if let Some(action) = action_queue.0.pop_front() {
-                schedules.run_action_system(action, world);
+                systems.run_action_system(action, world);
 
                 'effects: loop {
                     let mut effect_queue = world.get_resource_mut::<EffectQueue>().unwrap();
                     if let Some(effect) = effect_queue.0.pop_front() {
-                        schedules.run_effect_system(effect, world);
+                        systems.run_effect_system(effect, world);
                     } else {
                         break 'effects;
                     }
@@ -139,7 +139,7 @@ pub struct TurnEnginePlugin;
 
 impl Plugin for TurnEnginePlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<TurnSchedules>()
+        app.init_resource::<TurnSystems>()
             .init_resource::<ActionQueue>()
             .init_resource::<EffectQueue>()
             .add_stage_after(CoreStage::Update, TurnExecution, TurnExecutorLoop);
