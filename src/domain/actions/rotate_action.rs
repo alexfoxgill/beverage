@@ -6,14 +6,11 @@ use crate::{
 use bevy::prelude::*;
 
 #[derive(Debug)]
-pub struct RotateAction {
-    entity: Entity,
-    to: HexDirection,
-}
+pub struct RotateAction(Entity, HexDirection);
 
 impl RotateAction {
     pub fn new(entity: Entity, to: HexDirection) -> RotateAction {
-        RotateAction { entity, to }
+        RotateAction(entity, to)
     }
 }
 
@@ -31,6 +28,6 @@ fn setup(mut systems: ResMut<TurnSystems>) {
     systems.register_action_handler(handler.system())
 }
 
-fn handler(In(action): In<RotateAction>, mut effect_queue: ResMut<EffectQueue>) {
-    effect_queue.push(FaceEffect::new(action.entity, action.to));
+fn handler(In(RotateAction(entity, to)): In<RotateAction>, mut effect_queue: ResMut<EffectQueue>) {
+    effect_queue.push(FaceEffect::new(entity, to));
 }

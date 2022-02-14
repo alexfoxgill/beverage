@@ -6,14 +6,11 @@ use crate::turn_engine::effects::Effect;
 use crate::turn_engine::TurnSystems;
 
 #[derive(Debug)]
-pub struct FaceEffect {
-    entity: Entity,
-    face: HexDirection,
-}
+pub struct FaceEffect(Entity, HexDirection);
 
 impl FaceEffect {
     pub fn new(entity: Entity, face: HexDirection) -> FaceEffect {
-        FaceEffect { entity, face }
+        FaceEffect(entity, face)
     }
 }
 
@@ -31,8 +28,8 @@ fn setup(mut systems: ResMut<TurnSystems>) {
     systems.register_effect_handler(handler.system());
 }
 
-fn handler(In(effect): In<FaceEffect>, mut facings: Query<&mut Facing>) {
-    if let Ok(mut facing) = facings.get_mut(effect.entity) {
-        facing.0 = effect.face;
+fn handler(In(FaceEffect(entity, face)): In<FaceEffect>, mut facings: Query<&mut Facing>) {
+    if let Ok(mut facing) = facings.get_mut(entity) {
+        facing.0 = face;
     }
 }

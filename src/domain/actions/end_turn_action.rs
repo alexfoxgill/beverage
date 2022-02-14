@@ -5,13 +5,11 @@ use crate::{
 use bevy::prelude::*;
 
 #[derive(Debug)]
-pub struct EndTurnAction {
-    entity: Entity,
-}
+pub struct EndTurnAction(Entity);
 
 impl EndTurnAction {
     pub fn new(entity: Entity) -> EndTurnAction {
-        EndTurnAction { entity }
+        EndTurnAction(entity)
     }
 }
 
@@ -29,6 +27,6 @@ fn setup(mut systems: ResMut<TurnSystems>) {
     systems.register_action_handler(handler.system())
 }
 
-fn handler(In(action): In<EndTurnAction>, mut effects: ResMut<EffectQueue>) {
-    effects.push(EnergyCostEffect::new(action.entity, ActionCost::All));
+fn handler(In(EndTurnAction(entity)): In<EndTurnAction>, mut effects: ResMut<EffectQueue>) {
+    effects.push(EnergyCostEffect::new(entity, ActionCost::All));
 }

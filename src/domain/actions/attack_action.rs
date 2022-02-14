@@ -33,7 +33,10 @@ fn setup(mut systems: ResMut<TurnSystems>) {
     systems.register_action_handler(handler.system())
 }
 
-fn handler(In(action): In<AttackAction>, mut effect_queue: ResMut<EffectQueue>) {
-    effect_queue.push(EnergyCostEffect::new(action.attacker, ActionCost::All));
-    effect_queue.push(KillEffect::new(action.victim));
+fn handler(
+    In(AttackAction { attacker, victim }): In<AttackAction>,
+    mut effect_queue: ResMut<EffectQueue>,
+) {
+    effect_queue.push(EnergyCostEffect::new(attacker, ActionCost::All));
+    effect_queue.push(KillEffect::new(victim));
 }

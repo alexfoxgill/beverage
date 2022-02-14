@@ -10,13 +10,11 @@ use crate::{
 use bevy::prelude::*;
 
 #[derive(Debug)]
-pub struct StepAction {
-    entity: Entity,
-}
+pub struct StepAction(Entity);
 
 impl StepAction {
     pub fn new(entity: Entity) -> StepAction {
-        StepAction { entity }
+        StepAction(entity)
     }
 }
 impl Action for StepAction {}
@@ -34,22 +32,19 @@ fn setup(mut systems: ResMut<TurnSystems>) {
 }
 
 fn handler(
-    In(action): In<StepAction>,
+    In(StepAction(entity)): In<StepAction>,
     actors: Query<(&Actor, &HexPos, &Facing)>,
     map_tiles: Query<&HexPos, With<MapTile>>,
     mut effect_queue: ResMut<EffectQueue>,
 ) {
-    if let Ok((actor, pos, facing)) = actors.get(action.entity) {
+    if let Ok((actor, pos, facing)) = actors.get(entity) {
         let cost = 1;
         if actor.actions_remaining >= cost {
             let to = pos.get_facing(facing.0);
 
             if map_tiles.iter().any(|x| x.0 == to) {
-                effect_queue.push(EnergyCostEffect::new(
-                    action.entity,
-                    ActionCost::Fixed(cost),
-                ));
-                effect_queue.push(MoveEffect::new(action.entity, to));
+                effect_queue.push(EnergyCostEffect::new(entity, ActionCost::Fixed(cost)));
+                effect_queue.push(MoveEffect::new(entity, to));
             }
         }
     }

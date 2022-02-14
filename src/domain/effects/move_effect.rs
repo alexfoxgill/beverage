@@ -7,14 +7,11 @@ use crate::{
 };
 
 #[derive(Debug)]
-pub struct MoveEffect {
-    entity: Entity,
-    to: Coordinate,
-}
+pub struct MoveEffect(Entity, Coordinate);
 
 impl MoveEffect {
     pub fn new(entity: Entity, to: Coordinate) -> MoveEffect {
-        MoveEffect { entity, to }
+        MoveEffect(entity, to)
     }
 }
 
@@ -32,8 +29,8 @@ fn setup(mut systems: ResMut<TurnSystems>) {
     systems.register_effect_handler(handler.system());
 }
 
-fn handler(In(effect): In<MoveEffect>, mut positions: Query<&mut HexPos>) {
-    if let Ok(mut pos) = positions.get_mut(effect.entity) {
-        pos.0 = effect.to;
+fn handler(In(MoveEffect(entity, to)): In<MoveEffect>, mut positions: Query<&mut HexPos>) {
+    if let Ok(mut pos) = positions.get_mut(entity) {
+        pos.0 = to;
     }
 }

@@ -6,10 +6,7 @@ use crate::turn_engine::effects::Effect;
 use crate::turn_engine::TurnSystems;
 
 #[derive(Debug)]
-pub struct EnergyCostEffect {
-    pub entity: Entity,
-    pub cost: ActionCost,
-}
+pub struct EnergyCostEffect(Entity, ActionCost);
 
 #[derive(Debug, Clone)]
 pub enum ActionCost {
@@ -20,7 +17,7 @@ pub enum ActionCost {
 
 impl EnergyCostEffect {
     pub fn new(entity: Entity, cost: ActionCost) -> EnergyCostEffect {
-        EnergyCostEffect { entity, cost }
+        EnergyCostEffect(entity, cost)
     }
 }
 
@@ -38,15 +35,18 @@ fn setup(mut systems: ResMut<TurnSystems>) {
     systems.register_effect_handler(handler.system());
 }
 
-fn handler(In(effect): In<EnergyCostEffect>, mut actors: Query<&mut Actor>) {
-    match effect.cost {
+fn handler(
+    In(EnergyCostEffect(entity, cost)): In<EnergyCostEffect>,
+    mut actors: Query<&mut Actor>,
+) {
+    match cost {
         ActionCost::All => {
-            if let Ok(mut actor) = actors.get_mut(effect.entity) {
+            if let Ok(mut actor) = actors.get_mut(entity) {
                 actor.actions_remaining = 0;
             }
         }
         ActionCost::Fixed(cost) => {
-            if let Ok(mut actor) = actors.get_mut(effect.entity) {
+            if let Ok(mut actor) = actors.get_mut(entity) {
                 actor.actions_remaining = if cost < actor.actions_remaining {
                     actor.actions_remaining - cost
                 } else {
