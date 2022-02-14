@@ -1,6 +1,6 @@
 use crate::{
     common::*,
-    domain::effects::face_effect::FaceEffect,
+    domain::effects::face::FaceEffect,
     turn_engine::{actions::Action, effects::EffectQueue, TurnSystems},
 };
 use bevy::prelude::*;

@@ -1,5 +1,5 @@
 use crate::{
-    domain::effects::energy_cost_effect::{ActionCost, EnergyCostEffect},
+    domain::effects::energy_cost::{ActionCost, EnergyCostEffect},
     turn_engine::{actions::Action, effects::EffectQueue, TurnSystems},
 };
 use bevy::prelude::*;

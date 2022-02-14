@@ -6,8 +6,8 @@ use rand::prelude::*;
 
 use crate::animation::AnimatingState;
 use crate::common::*;
-use crate::domain::actions::rotate_action::RotateAction;
-use crate::domain::actions::step_action::StepAction;
+use crate::domain::actions::rotate::RotateAction;
+use crate::domain::actions::step::StepAction;
 use crate::turn_engine::actions::ActionQueue;
 use crate::turn_queue::*;
 

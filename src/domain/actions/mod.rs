@@ -1,15 +1,16 @@
 use bevy::prelude::*;
 
 use self::{
-    attack_action::AttackActionPlugin, backstep_action::BackstepActionPlugin,
-    step_action::StepActionPlugin, end_turn_action::EndTurnActionPlugin, rotate_action::RotateActionPlugin,
+    attack::AttackActionPlugin, backstep::BackstepActionPlugin,
+    end_turn::EndTurnActionPlugin, rotate::RotateActionPlugin,
+    step::StepActionPlugin,
 };
 
-pub mod attack_action;
-pub mod backstep_action;
-pub mod end_turn_action;
-pub mod rotate_action;
-pub mod step_action;
+pub mod attack;
+pub mod backstep;
+pub mod end_turn;
+pub mod rotate;
+pub mod step;
 
 pub struct DomainActionsPlugin;
 

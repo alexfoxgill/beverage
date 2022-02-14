@@ -1,8 +1,8 @@
 use crate::{
     common::*,
     domain::effects::{
-        energy_cost_effect::{ActionCost, EnergyCostEffect},
-        move_effect::MoveEffect,
+        energy_cost::{ActionCost, EnergyCostEffect},
+        move_entity::MoveEffect,
     },
     map::MapTile,
     turn_engine::{actions::Action, effects::EffectQueue, TurnSystems},
@@ -10,18 +10,18 @@ use crate::{
 use bevy::prelude::*;
 
 #[derive(Debug)]
-pub struct StepAction(Entity);
+pub struct BackstepAction(Entity);
 
-impl StepAction {
-    pub fn new(entity: Entity) -> StepAction {
-        StepAction(entity)
+impl BackstepAction {
+    pub fn new(entity: Entity) -> BackstepAction {
+        BackstepAction(entity)
     }
 }
-impl Action for StepAction {}
+impl Action for BackstepAction {}
 
-pub struct StepActionPlugin;
+pub struct BackstepActionPlugin;
 
-impl Plugin for StepActionPlugin {
+impl Plugin for BackstepActionPlugin {
     fn build(&self, app: &mut App) {
         app.add_startup_system(setup);
     }
@@ -32,15 +32,15 @@ fn setup(mut systems: ResMut<TurnSystems>) {
 }
 
 fn handler(
-    In(StepAction(entity)): In<StepAction>,
+    In(BackstepAction(entity)): In<BackstepAction>,
     actors: Query<(&Actor, &HexPos, &Facing)>,
     map_tiles: Query<&HexPos, With<MapTile>>,
     mut effect_queue: ResMut<EffectQueue>,
 ) {
     if let Ok((actor, pos, facing)) = actors.get(entity) {
-        let cost = 1;
+        let cost = 2;
         if actor.actions_remaining >= cost {
-            let to = pos.get_facing(facing.0);
+            let to = pos.get_facing(-facing.0);
 
             if map_tiles.iter().any(|x| x.0 == to) {
                 effect_queue.push(EnergyCostEffect::new(entity, ActionCost::Fixed(cost)));

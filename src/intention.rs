@@ -3,11 +3,11 @@ use bevy::prelude::*;
 use hex2d::*;
 
 use crate::common::*;
-use crate::domain::actions::attack_action::AttackAction;
-use crate::domain::actions::backstep_action::BackstepAction;
-use crate::domain::actions::end_turn_action::EndTurnAction;
-use crate::domain::actions::rotate_action::RotateAction;
-use crate::domain::actions::step_action::StepAction;
+use crate::domain::actions::attack::AttackAction;
+use crate::domain::actions::backstep::BackstepAction;
+use crate::domain::actions::end_turn::EndTurnAction;
+use crate::domain::actions::rotate::RotateAction;
+use crate::domain::actions::step::StepAction;
 use crate::turn_engine::actions::ActionQueue;
 use crate::turn_queue::*;
 
