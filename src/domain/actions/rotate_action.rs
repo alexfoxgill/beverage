@@ -32,7 +32,7 @@ impl Plugin for RotateActionPlugin {
 }
 
 fn setup(mut schedules: ResMut<TurnSchedules>) {
-    schedules.register_action_system(handler.system())
+    schedules.register_action_handler(handler.system())
 }
 
 fn handler(action: In<RotateAction>, mut effect_queue: ResMut<EffectQueue>) {

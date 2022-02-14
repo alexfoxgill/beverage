@@ -34,7 +34,7 @@ impl Plugin for StepActionPlugin {
 }
 
 fn setup(mut schedules: ResMut<TurnSchedules>) {
-    schedules.register_action_system(handler.system())
+    schedules.register_action_handler(handler.system())
 }
 
 fn handler(

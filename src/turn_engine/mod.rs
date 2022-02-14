@@ -30,7 +30,7 @@ where
     }
 }
 
-impl<A, S> AnyActionRunner for TypedSystemRunner<A, S>
+impl<A, S> AnyRunner<AnyAction> for TypedSystemRunner<A, S>
 where
     A: Action,
     S: System<In = A, Out = ()>,
@@ -46,28 +46,28 @@ where
     }
 }
 
-trait AnyActionRunner: Send + Sync {
-    fn run_action(&mut self, action: AnyAction, world: &mut World);
+trait AnyRunner<T>: Send + Sync {
+    fn run_action(&mut self, action: T, world: &mut World);
 }
 
 #[derive(Default)]
 pub struct TurnSchedules {
     effects: HashMap<TypeId, Schedule>,
-    action_handlers: HashMap<TypeId, Box<dyn AnyActionRunner>>,
+    actions: HashMap<TypeId, Box<dyn AnyRunner<AnyAction>>>,
 }
 
 impl TurnSchedules {
-    pub fn register_action_system<A: Action + 'static>(
+    pub fn register_action_handler<A: Action + 'static>(
         &mut self,
         system: impl System<In = A, Out = ()>,
     ) {
-        self.action_handlers
+        self.actions
             .insert(TypeId::of::<A>(), Box::new(TypedSystemRunner::new(system)));
     }
 
     pub fn run_action_system(&mut self, action: AnyAction, world: &mut World) {
         let action_type = action.inner_type();
-        if let Some(handler) = self.action_handlers.get_mut(&action_type) {
+        if let Some(handler) = self.actions.get_mut(&action_type) {
             handler.run_action(action, world);
         } else {
             eprintln!("Could not find scheduler for action {:?}", action_type);

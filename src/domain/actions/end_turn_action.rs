@@ -30,7 +30,7 @@ impl Plugin for EndTurnActionPlugin {
 }
 
 fn setup(mut schedules: ResMut<TurnSchedules>) {
-    schedules.register_action_system(handler.system())
+    schedules.register_action_handler(handler.system())
 }
 
 fn handler(In(action): In<EndTurnAction>, mut effects: ResMut<EffectQueue>) {
