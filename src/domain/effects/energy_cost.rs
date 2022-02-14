@@ -2,8 +2,10 @@ use bevy::prelude::*;
 
 use crate::common::Actor;
 
-use crate::turn_engine::effects::Effect;
+use crate::turn_engine::effects::{Effect, EffectQueue};
 use crate::turn_engine::TurnSystems;
+
+use super::end_turn::EndTurnEffect;
 
 #[derive(Debug)]
 pub struct EnergyCostEffect(Entity, ActionCost);
@@ -38,22 +40,25 @@ fn setup(mut systems: ResMut<TurnSystems>) {
 fn handler(
     In(EnergyCostEffect(entity, cost)): In<EnergyCostEffect>,
     mut actors: Query<&mut Actor>,
+    mut effects: ResMut<EffectQueue>,
 ) {
-    match cost {
-        ActionCost::All => {
-            if let Ok(mut actor) = actors.get_mut(entity) {
+    if let Ok(mut actor) = actors.get_mut(entity) {
+        match cost {
+            ActionCost::All => {
                 actor.actions_remaining = 0;
             }
-        }
-        ActionCost::Fixed(cost) => {
-            if let Ok(mut actor) = actors.get_mut(entity) {
+            ActionCost::Fixed(cost) => {
                 actor.actions_remaining = if cost < actor.actions_remaining {
                     actor.actions_remaining - cost
                 } else {
                     0
                 };
             }
+            ActionCost::None => (),
         }
-        ActionCost::None => (),
+
+        if actor.actions_remaining == 0 {
+            effects.push(EndTurnEffect::new(entity));
+        }
     }
 }

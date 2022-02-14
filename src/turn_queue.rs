@@ -1,23 +1,55 @@
 use std::collections::VecDeque;
 
+use crate::turn_engine::TurnExecution;
+
 use super::common::*;
 use bevy::prelude::*;
 
 #[derive(Default)]
 pub struct TurnQueue {
-    pub queue: VecDeque<Entity>,
+    queue: VecDeque<Entity>,
 }
 
-pub fn cycle_turn_queue(mut actors: Query<&mut Actor>, mut turn_queue: ResMut<TurnQueue>) {
-    if let Some(&entity) = turn_queue.queue.front() {
-        if let Ok(mut actor) = actors.get_mut(entity) {
-            if actor.actions_remaining == 0 {
-                actor.actions_remaining = actor.actions_per_turn;
-                turn_queue.queue.pop_front();
-                turn_queue.queue.push_back(entity);
-            }
-        } else {
-            turn_queue.queue.pop_front();
+impl TurnQueue {
+    pub fn head(&self) -> Option<&Entity> {
+        self.queue.front()
+    }
+
+    pub fn is_first(&self, entity: Entity) -> bool {
+        self.head() == Some(&entity)
+    }
+
+    pub fn cycle(&mut self) {
+        if let Some(entity) = self.queue.pop_front() {
+            self.queue.push_back(entity);
         }
+    }
+
+    pub fn remove(&mut self, entity: Entity) {
+        if let Some(idx) = self.queue.iter().position(|&e| e == entity) {
+            self.queue.remove(idx);
+        }
+    }
+
+    pub fn enqueue(&mut self, entity: Entity) {
+        self.queue.push_back(entity);
+    }
+}
+
+fn remove_dead_from_queue(dead: RemovedComponents<Actor>, mut turn_queue: ResMut<TurnQueue>) {
+    for entity in dead.iter() {
+        turn_queue.remove(entity);
+    }
+}
+
+pub struct TurnQueuePlugin;
+
+impl Plugin for TurnQueuePlugin {
+    fn build(&self, app: &mut App) {
+        app.init_resource::<TurnQueue>().add_stage_after(
+            TurnExecution,
+            "clean_turn_queue",
+            SystemStage::parallel().with_system(remove_dead_from_queue),
+        );
     }
 }

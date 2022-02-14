@@ -41,7 +41,7 @@ fn ingame_keyboard_input(
     turn_queue: Res<TurnQueue>,
     mut ev_intention: EventWriter<IntentionEvent>,
 ) {
-    if let Some(&entity) = turn_queue.queue.front() {
+    if let Some(&entity) = turn_queue.head() {
         if let Ok(actor) = actors.get(entity) {
             if actor.control_source == ControlSource::Player {
                 if keys.just_pressed(KeyCode::Left) {

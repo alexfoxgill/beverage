@@ -1,5 +1,5 @@
 use crate::{
-    domain::effects::energy_cost::{ActionCost, EnergyCostEffect},
+    domain::effects::end_turn::EndTurnEffect,
     turn_engine::{actions::Action, effects::EffectQueue, TurnSystems},
 };
 use bevy::prelude::*;
@@ -28,5 +28,5 @@ fn setup(mut systems: ResMut<TurnSystems>) {
 }
 
 fn handler(In(EndTurnAction(entity)): In<EndTurnAction>, mut effects: ResMut<EffectQueue>) {
-    effects.push(EnergyCostEffect::new(entity, ActionCost::All));
+    effects.push(EndTurnEffect::new(entity));
 }

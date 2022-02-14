@@ -9,7 +9,7 @@ use crate::common::*;
 use crate::domain::actions::rotate::RotateAction;
 use crate::domain::actions::step::StepAction;
 use crate::turn_engine::actions::ActionQueue;
-use crate::turn_queue::*;
+use crate::turn_queue::TurnQueue;
 
 pub struct AiPlugin;
 
@@ -26,7 +26,7 @@ pub fn generate_ai_actions(
     turn_queue: Res<TurnQueue>,
     mut actions: ResMut<ActionQueue>,
 ) {
-    if let Some(&entity) = turn_queue.queue.front() {
+    if let Some(&entity) = turn_queue.head() {
         if let Ok((_pos, facing, actor)) = actors.get(entity) {
             if actor.control_source == ControlSource::AI && actor.actions_remaining > 0 {
                 let rotation = Angle::from_int(rand::thread_rng().gen_range(1..=6));

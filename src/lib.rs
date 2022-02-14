@@ -3,6 +3,7 @@ use bevy::prelude::*;
 use bevy_easings::EasingsPlugin;
 use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*, shapes::Circle};
 use hex2d::*;
+use turn_queue::{TurnQueue, TurnQueuePlugin};
 use wasm_bindgen::prelude::*;
 
 pub mod ai;
@@ -22,7 +23,6 @@ use domain::*;
 use intention::*;
 use map::*;
 use turn_engine::*;
-use turn_queue::*;
 
 #[wasm_bindgen]
 pub fn run() {
@@ -41,9 +41,9 @@ impl Plugin for GamePlugin {
         app.insert_resource(Msaa { samples: 4 })
             .insert_resource(ClearColor(Color::rgb(0.9, 0.9, 0.9)))
             .add_state(AnimatingState::Still)
-            .init_resource::<TurnQueue>()
             .add_plugin(MapPlugin)
             .add_plugin(TurnEnginePlugin)
+            .add_plugin(TurnQueuePlugin)
             .add_plugin(DomainPlugin)
             .add_plugin(AiPlugin)
             .add_plugin(IntentionPlugin)
@@ -52,7 +52,6 @@ impl Plugin for GamePlugin {
                 "blah",
                 SystemStage::parallel()
                     .with_system(animate_movement.label("run_animations"))
-                    .with_system(cycle_turn_queue)
                     .with_system(update_animating_state.after("run_animations")),
             )
             .add_system(bevy::input::system::exit_on_esc_system)
@@ -73,7 +72,7 @@ fn setup(mut commands: Commands, mut turn_queue: ResMut<TurnQueue>) {
         })
         .id();
 
-    turn_queue.queue.push_back(player);
+    turn_queue.enqueue(player);
 
     spawn_enemy(&mut commands, &mut turn_queue, Coordinate::new(2, 2));
     spawn_enemy(&mut commands, &mut turn_queue, Coordinate::new(-2, -2));
@@ -87,7 +86,7 @@ fn spawn_enemy(commands: &mut Commands, turn_queue: &mut TurnQueue, coordinate: 
         })
         .id();
 
-    turn_queue.queue.push_back(enemy);
+    turn_queue.enqueue(enemy);
 }
 
 fn direction_indicator() -> ShapeBundle {
