@@ -2,7 +2,6 @@ use bevy::prelude::*;
 
 use hex2d::*;
 
-use crate::common::*;
 use crate::domain::actions::backstep::BackstepAction;
 use crate::domain::actions::end_turn::EndTurnAction;
 use crate::domain::actions::rotate::RotateAction;
@@ -10,6 +9,7 @@ use crate::domain::actions::step::StepAction;
 use crate::domain::actions::strike::StrikeAction;
 use crate::turn_engine::actions::ActionQueue;
 use crate::turn_queue::*;
+use crate::Player;
 
 pub struct IntentionPlugin;
 
@@ -38,30 +38,28 @@ struct IntentionProducer;
 
 fn ingame_keyboard_input(
     keys: Res<Input<KeyCode>>,
-    actors: Query<&Actor>,
+    players: Query<(), With<Player>>,
     turn_queue: Res<TurnQueue>,
     mut ev_intention: EventWriter<IntentionEvent>,
 ) {
     if let Some(&entity) = turn_queue.head() {
-        if let Ok(actor) = actors.get(entity) {
-            if actor.control_source == ControlSource::Player {
-                let intention = if keys.just_pressed(KeyCode::Left) {
-                    Intention::TurnLeft
-                } else if keys.just_pressed(KeyCode::Right) {
-                    Intention::TurnRight
-                } else if keys.just_pressed(KeyCode::Up) {
-                    Intention::Step
-                } else if keys.just_pressed(KeyCode::Down) {
-                    Intention::Backstep
-                } else if keys.just_pressed(KeyCode::E) {
-                    Intention::EndTurn
-                } else if keys.just_pressed(KeyCode::Space) {
-                    Intention::Strike
-                } else {
-                    return;
-                };
-                ev_intention.send(IntentionEvent(entity, intention));
-            }
+        if players.get(entity).is_ok() {
+            let intention = if keys.just_pressed(KeyCode::Left) {
+                Intention::TurnLeft
+            } else if keys.just_pressed(KeyCode::Right) {
+                Intention::TurnRight
+            } else if keys.just_pressed(KeyCode::Up) {
+                Intention::Step
+            } else if keys.just_pressed(KeyCode::Down) {
+                Intention::Backstep
+            } else if keys.just_pressed(KeyCode::E) {
+                Intention::EndTurn
+            } else if keys.just_pressed(KeyCode::Space) {
+                Intention::Strike
+            } else {
+                return;
+            };
+            ev_intention.send(IntentionEvent(entity, intention));
         }
     }
 }

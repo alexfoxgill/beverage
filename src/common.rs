@@ -6,15 +6,8 @@ pub const HEX_SPACING: Spacing = Spacing::FlatTop(40.0);
 
 pub type HexDirection = hex2d::Direction;
 
-#[derive(Debug, PartialEq, Clone, Copy)]
-pub enum ControlSource {
-    Player,
-    AI,
-}
-
 #[derive(Component, Debug)]
 pub struct Actor {
-    pub control_source: ControlSource,
     pub actions_per_turn: u8,
     pub actions_remaining: u8,
 }

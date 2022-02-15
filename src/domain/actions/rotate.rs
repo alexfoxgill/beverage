@@ -7,23 +7,33 @@ use bevy::prelude::*;
 use hex2d::Angle;
 
 #[derive(Debug)]
-pub struct RotateAction(Entity, Angle);
+pub struct RotateAction {
+    entity: Entity,
+    angle: Angle,
+}
 
 impl RotateAction {
-    pub fn new(entity: Entity, by: Angle) -> RotateAction {
-        RotateAction(entity, by)
+    pub fn new(entity: Entity, angle: Angle) -> RotateAction {
+        RotateAction { entity, angle }
+    }
+
+    pub fn effects(&self, facing: &Facing, _actor: &Actor) -> EffectQueue {
+        let mut queue = EffectQueue::default();
+        let target = facing.rotated(self.angle);
+        queue.push(FaceEffect::new(self.entity, target));
+        queue
     }
 }
 
 impl Action for RotateAction {}
 
 pub fn handler(
-    In(RotateAction(entity, by)): In<RotateAction>,
-    query: Query<&Facing>,
+    In(action): In<RotateAction>,
+    query: Query<(&Facing, &Actor)>,
     mut effect_queue: ResMut<EffectQueue>,
 ) {
-    if let Ok(facing) = query.get(entity) {
-        let target = facing.rotated(by);
-        effect_queue.push(FaceEffect::new(entity, target));
+    if let Ok((facing, actor)) = query.get(action.entity) {
+        let effects = action.effects(facing, actor);
+        effect_queue.append(effects);
     }
 }

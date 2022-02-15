@@ -106,16 +106,35 @@ fn direction_indicator() -> ShapeBundle {
 
 #[derive(Bundle)]
 struct ActorBundle {
+    #[bundle]
+    shape: ShapeBundle,
+
     facing: Facing,
     pos: HexPos,
     actor: Actor,
+}
 
+#[derive(Component)]
+pub struct Player;
+
+#[derive(Bundle)]
+struct PlayerBundle {
     #[bundle]
-    shape: ShapeBundle,
+    actor: ActorBundle,
+
+    player: Player,
+}
+
+#[derive(Bundle)]
+struct AiBundle {
+    #[bundle]
+    actor: ActorBundle,
+
+    ai: AIBehaviour,
 }
 
 impl ActorBundle {
-    fn new_player(coord: Coordinate) -> ActorBundle {
+    fn new_player(coord: Coordinate) -> PlayerBundle {
         let facing = Facing::default();
         let pos = HexPos(coord);
         let shape = GeometryBuilder::build_as(
@@ -131,20 +150,23 @@ impl ActorBundle {
         );
 
         let actor = Actor {
-            control_source: ControlSource::Player,
             actions_per_turn: 2,
             actions_remaining: 2,
         };
 
-        ActorBundle {
-            facing,
-            pos,
-            shape,
-            actor,
+        PlayerBundle {
+            actor: ActorBundle {
+                facing,
+                pos,
+                shape,
+                actor,
+            },
+
+            player: Player,
         }
     }
 
-    fn new_enemy(coord: Coordinate) -> ActorBundle {
+    fn new_enemy(coord: Coordinate) -> AiBundle {
         let facing = Facing::default();
         let pos = HexPos(coord);
         let shape = GeometryBuilder::build_as(
@@ -160,16 +182,18 @@ impl ActorBundle {
         );
 
         let actor = Actor {
-            control_source: ControlSource::AI,
             actions_per_turn: 1,
             actions_remaining: 1,
         };
 
-        ActorBundle {
-            facing,
-            pos,
-            shape,
-            actor,
+        AiBundle {
+            actor: ActorBundle {
+                facing,
+                pos,
+                shape,
+                actor,
+            },
+            ai: AIBehaviour::Wandering,
         }
     }
 }
