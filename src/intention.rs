@@ -3,11 +3,11 @@ use bevy::prelude::*;
 use hex2d::*;
 
 use crate::common::*;
-use crate::domain::actions::attack::AttackAction;
 use crate::domain::actions::backstep::BackstepAction;
 use crate::domain::actions::end_turn::EndTurnAction;
 use crate::domain::actions::rotate::RotateAction;
 use crate::domain::actions::step::StepAction;
+use crate::domain::actions::strike::StrikeAction;
 use crate::turn_engine::actions::ActionQueue;
 use crate::turn_queue::*;
 
@@ -45,51 +45,39 @@ fn ingame_keyboard_input(
     if let Some(&entity) = turn_queue.head() {
         if let Ok(actor) = actors.get(entity) {
             if actor.control_source == ControlSource::Player {
-                if keys.just_pressed(KeyCode::Left) {
-                    ev_intention.send(IntentionEvent(entity, Intention::TurnLeft));
-                }
-                if keys.just_pressed(KeyCode::Right) {
-                    ev_intention.send(IntentionEvent(entity, Intention::TurnRight));
-                }
-                if keys.just_pressed(KeyCode::Up) {
-                    ev_intention.send(IntentionEvent(entity, Intention::Step));
-                }
-                if keys.just_pressed(KeyCode::Down) {
-                    ev_intention.send(IntentionEvent(entity, Intention::Backstep));
-                }
-                if keys.just_pressed(KeyCode::E) {
-                    ev_intention.send(IntentionEvent(entity, Intention::EndTurn));
-                }
-                if keys.just_pressed(KeyCode::Space) {
-                    ev_intention.send(IntentionEvent(entity, Intention::Strike));
-                }
+                let intention = if keys.just_pressed(KeyCode::Left) {
+                    Intention::TurnLeft
+                } else if keys.just_pressed(KeyCode::Right) {
+                    Intention::TurnRight
+                } else if keys.just_pressed(KeyCode::Up) {
+                    Intention::Step
+                } else if keys.just_pressed(KeyCode::Down) {
+                    Intention::Backstep
+                } else if keys.just_pressed(KeyCode::E) {
+                    Intention::EndTurn
+                } else if keys.just_pressed(KeyCode::Space) {
+                    Intention::Strike
+                } else {
+                    return;
+                };
+                ev_intention.send(IntentionEvent(entity, intention));
             }
         }
     }
 }
 
 fn process_intention(
-    mut actors: Query<(&Facing, &HexPos, Entity)>,
     mut ev_intention: EventReader<IntentionEvent>,
     mut ev_action: ResMut<ActionQueue>,
 ) {
     for IntentionEvent(entity, intention) in ev_intention.iter() {
-        let (facing, pos, _) = actors.get_mut(*entity).unwrap();
-
         match intention {
             Intention::TurnLeft => ev_action.push(RotateAction::new(*entity, Angle::Left)),
             Intention::TurnRight => ev_action.push(RotateAction::new(*entity, Angle::Right)),
             Intention::Step => ev_action.push(StepAction::new(*entity)),
             Intention::Backstep => ev_action.push(BackstepAction::new(*entity)),
             Intention::EndTurn => ev_action.push(EndTurnAction::new(*entity)),
-            Intention::Strike => {
-                let coord_to_attack = pos.get_facing(facing.0);
-                for (_, pos, e) in actors.iter() {
-                    if pos.0 == coord_to_attack {
-                        ev_action.push(AttackAction::new(*entity, e));
-                    }
-                }
-            }
+            Intention::Strike => ev_action.push(StrikeAction::new(*entity)),
         }
     }
 }
