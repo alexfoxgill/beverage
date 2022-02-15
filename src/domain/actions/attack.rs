@@ -3,7 +3,7 @@ use crate::{
         energy_cost::{ActionCost, EnergyCostEffect},
         kill::KillEffect,
     },
-    turn_engine::{actions::Action, effects::EffectQueue, TurnSystems},
+    turn_engine::{actions::Action, effects::EffectQueue},
 };
 use bevy::prelude::*;
 
@@ -21,19 +21,7 @@ impl AttackAction {
 
 impl Action for AttackAction {}
 
-pub struct AttackActionPlugin;
-
-impl Plugin for AttackActionPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_startup_system(setup);
-    }
-}
-
-fn setup(mut systems: ResMut<TurnSystems>) {
-    systems.register_action_handler(handler.system())
-}
-
-fn handler(
+pub fn handler(
     In(AttackAction { attacker, victim }): In<AttackAction>,
     mut effect_queue: ResMut<EffectQueue>,
 ) {

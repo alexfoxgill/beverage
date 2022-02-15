@@ -5,7 +5,7 @@ use crate::{
         move_entity::MoveEffect,
     },
     map::MapTile,
-    turn_engine::{actions::Action, effects::EffectQueue, TurnSystems},
+    turn_engine::{actions::Action, effects::EffectQueue},
 };
 use bevy::prelude::*;
 
@@ -19,19 +19,7 @@ impl BackstepAction {
 }
 impl Action for BackstepAction {}
 
-pub struct BackstepActionPlugin;
-
-impl Plugin for BackstepActionPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_startup_system(setup);
-    }
-}
-
-fn setup(mut systems: ResMut<TurnSystems>) {
-    systems.register_action_handler(handler.system())
-}
-
-fn handler(
+pub fn handler(
     In(BackstepAction(entity)): In<BackstepAction>,
     actors: Query<(&Actor, &HexPos, &Facing)>,
     map_tiles: Query<&HexPos, With<MapTile>>,

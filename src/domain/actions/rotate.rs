@@ -1,7 +1,7 @@
 use crate::{
     common::*,
     domain::effects::face::FaceEffect,
-    turn_engine::{actions::Action, effects::EffectQueue, TurnSystems},
+    turn_engine::{actions::Action, effects::EffectQueue},
 };
 use bevy::prelude::*;
 use hex2d::Angle;
@@ -17,19 +17,7 @@ impl RotateAction {
 
 impl Action for RotateAction {}
 
-pub struct RotateActionPlugin;
-
-impl Plugin for RotateActionPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_startup_system(setup);
-    }
-}
-
-fn setup(mut systems: ResMut<TurnSystems>) {
-    systems.register_action_handler(handler.system())
-}
-
-fn handler(
+pub fn handler(
     In(RotateAction(entity, by)): In<RotateAction>,
     query: Query<&Facing>,
     mut effect_queue: ResMut<EffectQueue>,
