@@ -3,7 +3,6 @@ use bevy::prelude::*;
 use crate::common::Actor;
 
 use crate::turn_engine::effects::{Effect, EffectQueue};
-use crate::turn_engine::TurnSystems;
 
 use super::end_turn::EndTurnEffect;
 
@@ -25,19 +24,7 @@ impl EnergyCostEffect {
 
 impl Effect for EnergyCostEffect {}
 
-pub struct EnergyCostEffectPlugin;
-
-impl Plugin for EnergyCostEffectPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_startup_system(setup);
-    }
-}
-
-fn setup(mut systems: ResMut<TurnSystems>) {
-    systems.register_effect_handler(handler.system());
-}
-
-fn handler(
+pub fn handler(
     In(EnergyCostEffect(entity, cost)): In<EnergyCostEffect>,
     mut actors: Query<&mut Actor>,
     mut effects: ResMut<EffectQueue>,

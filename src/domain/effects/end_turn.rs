@@ -1,4 +1,4 @@
-use crate::turn_engine::{effects::Effect, TurnSystems};
+use crate::turn_engine::effects::Effect;
 
 use crate::common::*;
 use crate::turn_queue::TurnQueue;
@@ -15,19 +15,7 @@ impl EndTurnEffect {
 
 impl Effect for EndTurnEffect {}
 
-pub struct EndTurnEffectPlugin;
-
-impl Plugin for EndTurnEffectPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_startup_system(setup);
-    }
-}
-
-fn setup(mut systems: ResMut<TurnSystems>) {
-    systems.register_effect_handler(handler.system());
-}
-
-fn handler(
+pub fn handler(
     In(EndTurnEffect(entity)): In<EndTurnEffect>,
     mut actors: Query<&mut Actor>,
     mut turn_queue: ResMut<TurnQueue>,
