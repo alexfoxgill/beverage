@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::common::{Facing, HexDirection};
+use crate::domain::common::{Facing, HexDirection};
 
 use crate::turn_engine::effects::Effect;
 

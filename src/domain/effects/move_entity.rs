@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use hex2d::Coordinate;
 
-use crate::{common::HexPos, turn_engine::effects::Effect};
+use crate::{domain::common::HexPos, turn_engine::effects::Effect};
 
 #[derive(Debug)]
 pub struct MoveEffect(Entity, Coordinate);

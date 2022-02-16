@@ -4,6 +4,7 @@ use self::{actions::DomainActionsPlugin, effects::DomainEffectsPlugin};
 
 pub mod actions;
 pub mod effects;
+pub mod common;
 
 pub struct DomainPlugin;
 

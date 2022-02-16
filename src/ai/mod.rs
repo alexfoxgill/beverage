@@ -10,7 +10,7 @@ use crate::domain::actions::step::StepAction;
 use crate::domain::actions::strike::StrikeAction;
 use crate::turn_engine::actions::ActionQueue;
 use crate::turn_queue::TurnQueue;
-use crate::{common::*, Player};
+use crate::{domain::common::*, Player};
 
 pub struct AiPlugin;
 

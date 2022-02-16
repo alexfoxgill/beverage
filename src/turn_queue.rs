@@ -2,7 +2,7 @@ use std::collections::VecDeque;
 
 use crate::turn_engine::TurnExecution;
 
-use super::common::*;
+use super::domain::common::*;
 use bevy::prelude::*;
 
 #[derive(Default)]

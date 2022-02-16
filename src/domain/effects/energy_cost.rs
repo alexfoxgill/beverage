@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::common::Actor;
+use crate::domain::common::Actor;
 
 use crate::turn_engine::effects::{Effect, EffectQueue};
 

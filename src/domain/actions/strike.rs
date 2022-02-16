@@ -1,5 +1,5 @@
 use crate::{
-    common::{Actor, Facing, HexPos},
+    domain::common::{Actor, Facing, HexPos},
     domain::effects::{
         energy_cost::{ActionCost, EnergyCostEffect},
         kill::KillEffect,

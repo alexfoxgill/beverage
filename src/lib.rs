@@ -8,7 +8,6 @@ use wasm_bindgen::prelude::*;
 
 pub mod ai;
 pub mod animation;
-pub mod common;
 pub mod domain;
 pub mod hex_map;
 pub mod intention;
@@ -18,7 +17,7 @@ pub mod turn_queue;
 
 use ai::*;
 use animation::*;
-use common::*;
+use domain::common::*;
 use domain::*;
 use intention::*;
 use map::*;

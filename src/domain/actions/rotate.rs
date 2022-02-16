@@ -1,5 +1,5 @@
 use crate::{
-    common::*,
+    domain::common::*,
     domain::effects::face::FaceEffect,
     turn_engine::{actions::Action, effects::EffectQueue},
 };

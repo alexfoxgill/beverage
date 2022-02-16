@@ -1,5 +1,5 @@
 use crate::{
-    common::*,
+    domain::common::*,
     domain::effects::{
         energy_cost::{ActionCost, EnergyCostEffect},
         move_entity::MoveEffect,

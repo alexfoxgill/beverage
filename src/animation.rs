@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use crate::common::*;
+use crate::domain::common::*;
 use bevy::prelude::*;
 use bevy_easings::{Ease, EaseFunction, EasingType};
 

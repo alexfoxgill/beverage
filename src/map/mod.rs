@@ -7,7 +7,7 @@ use hex2d::*;
 use rand::prelude::*;
 
 use crate::{
-    common::{HexPos, HEX_SPACING},
+    domain::common::{HexPos, HEX_SPACING},
     hex_map::HexMap,
 };
 

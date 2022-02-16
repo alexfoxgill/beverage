@@ -1,6 +1,6 @@
 use crate::turn_engine::effects::Effect;
 
-use crate::common::*;
+use crate::domain::common::*;
 use crate::turn_queue::TurnQueue;
 use bevy::prelude::*;
 
