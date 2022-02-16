@@ -23,17 +23,18 @@ pub fn handler(
     In(StrikeAction(attacker)): In<StrikeAction>,
     query: Query<(&HexPos, &Facing, &Actor)>,
     targets: Query<(&HexPos, Entity), With<Actor>>,
-    mut effect_queue: ResMut<EffectQueue>,
-) {
+) -> EffectQueue {
+    let mut effects = EffectQueue::default();
     if let Ok((pos, facing, actor)) = query.get(attacker) {
         if actor.actions_remaining > 0 {
             let coord_to_attack = pos.get_facing(facing.0);
-            effect_queue.push(EnergyCostEffect::new(attacker, ActionCost::All));
+            effects.push(EnergyCostEffect::new(attacker, ActionCost::All));
             for (pos, e) in targets.iter() {
                 if pos.0 == coord_to_attack {
-                    effect_queue.push(KillEffect::new(e));
+                    effects.push(KillEffect::new(e));
                 }
             }
         }
     }
+    effects
 }

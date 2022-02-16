@@ -15,6 +15,8 @@ impl EndTurnAction {
 
 impl Action for EndTurnAction {}
 
-pub fn handler(In(EndTurnAction(entity)): In<EndTurnAction>, mut effects: ResMut<EffectQueue>) {
+pub fn handler(In(EndTurnAction(entity)): In<EndTurnAction>) -> EffectQueue {
+    let mut effects = EffectQueue::default();
     effects.push(EndTurnEffect::new(entity));
+    effects
 }

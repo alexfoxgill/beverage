@@ -10,19 +10,19 @@ use self::{
 pub mod actions;
 pub mod effects;
 
-struct TypedSystemRunner<In, S>
+struct TypedSystemRunner<In, Out, S>
 where
-    S: System<In = In, Out = ()>,
+    S: System<In = In, Out = Out>,
 {
     system: S,
     initialized: bool,
 }
 
-impl<In, S> TypedSystemRunner<In, S>
+impl<In, Out, S> TypedSystemRunner<In, Out, S>
 where
-    S: System<In = In, Out = ()>,
+    S: System<In = In, Out = Out>,
 {
-    pub fn new(system: S) -> TypedSystemRunner<In, S> {
+    pub fn new(system: S) -> TypedSystemRunner<In, Out, S> {
         TypedSystemRunner {
             system,
             initialized: false,
@@ -30,27 +30,30 @@ where
     }
 }
 
-trait AnyRunner<T>: Send + Sync {
-    fn run(&mut self, input: T, world: &mut World);
+trait AnyRunner<T, Out = ()>: Send + Sync {
+    fn run(&mut self, input: T, world: &mut World) -> Out;
 }
 
-impl<A: Action, S> AnyRunner<AnyAction> for TypedSystemRunner<A, S>
+impl<A: Action, S> AnyRunner<AnyAction, EffectQueue> for TypedSystemRunner<A, EffectQueue, S>
 where
-    S: System<In = A, Out = ()>,
+    S: System<In = A, Out = EffectQueue>,
 {
-    fn run(&mut self, action: AnyAction, world: &mut World) {
+    fn run(&mut self, action: AnyAction, world: &mut World) -> EffectQueue {
         if let Ok(action) = action.0.downcast::<A>() {
             if !self.initialized {
                 self.system.initialize(world);
                 self.initialized = true;
             }
-            self.system.run(*action, world);
+            let effects = self.system.run(*action, world);
             self.system.apply_buffers(world);
+            effects
+        } else {
+            EffectQueue::default()
         }
     }
 }
 
-impl<E: Effect, S> AnyRunner<AnyEffect> for TypedSystemRunner<E, S>
+impl<E: Effect, S> AnyRunner<AnyEffect> for TypedSystemRunner<E, (), S>
 where
     S: System<In = E, Out = ()>,
 {
@@ -69,24 +72,25 @@ where
 #[derive(Default)]
 pub struct TurnSystems {
     effects: HashMap<TypeId, Box<dyn AnyRunner<AnyEffect>>>,
-    actions: HashMap<TypeId, Box<dyn AnyRunner<AnyAction>>>,
+    actions: HashMap<TypeId, Box<dyn AnyRunner<AnyAction, EffectQueue>>>,
 }
 
 impl TurnSystems {
     pub fn register_action_handler<A: Action + 'static>(
         &mut self,
-        system: impl System<In = A, Out = ()>,
+        system: impl System<In = A, Out = EffectQueue>,
     ) {
         self.actions
             .insert(TypeId::of::<A>(), Box::new(TypedSystemRunner::new(system)));
     }
 
-    pub fn run_action_system(&mut self, action: AnyAction, world: &mut World) {
+    pub fn run_action_system(&mut self, action: AnyAction, world: &mut World) -> EffectQueue {
         let action_type = action.inner_type();
         if let Some(handler) = self.actions.get_mut(&action_type) {
-            handler.run(action, world);
+            handler.run(action, world)
         } else {
             eprintln!("Could not find scheduler for action {:?}", action_type);
+            EffectQueue::default()
         }
     }
 
@@ -115,7 +119,9 @@ impl Stage for TurnExecutorLoop {
         world.resource_scope(|world, mut systems: Mut<TurnSystems>| 'actions: loop {
             let mut action_queue = world.get_resource_mut::<ActionQueue>().unwrap();
             if let Some(action) = action_queue.0.pop_front() {
-                systems.run_action_system(action, world);
+                let new_effects = systems.run_action_system(action, world);
+                let mut effect_queue = world.get_resource_mut::<EffectQueue>().unwrap();
+                effect_queue.append(new_effects);
 
                 'effects: loop {
                     let mut effect_queue = world.get_resource_mut::<EffectQueue>().unwrap();
