@@ -7,8 +7,8 @@ use crate::domain::actions::end_turn::EndTurnAction;
 use crate::domain::actions::rotate::RotateAction;
 use crate::domain::actions::step::StepAction;
 use crate::domain::actions::strike::StrikeAction;
+use crate::domain::turn_queue::*;
 use crate::turn_engine::actions::ActionQueue;
-use crate::turn_queue::*;
 use crate::Player;
 
 pub struct IntentionPlugin;

@@ -6,10 +6,11 @@ use bevy_prototype_lyon::prelude::*;
 use hex2d::*;
 use rand::prelude::*;
 
-use crate::{
-    domain::common::{HexPos, HEX_SPACING},
-    hex_map::HexMap,
-};
+mod hex_map;
+
+use crate::domain::common::{HexPos, HEX_SPACING};
+
+use hex_map::HexMap;
 
 pub struct MapPlugin;
 

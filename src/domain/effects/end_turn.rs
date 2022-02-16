@@ -1,7 +1,7 @@
 use crate::turn_engine::effects::Effect;
 
 use crate::domain::common::*;
-use crate::turn_queue::TurnQueue;
+use crate::domain::turn_queue::TurnQueue;
 use bevy::prelude::*;
 
 #[derive(Debug)]

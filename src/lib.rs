@@ -3,17 +3,15 @@ use bevy::prelude::*;
 use bevy_easings::EasingsPlugin;
 use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*, shapes::Circle};
 use hex2d::*;
-use turn_queue::{TurnQueue, TurnQueuePlugin};
+use domain::turn_queue::{TurnQueue, TurnQueuePlugin};
 use wasm_bindgen::prelude::*;
 
 pub mod ai;
 pub mod animation;
 pub mod domain;
-pub mod hex_map;
 pub mod intention;
 pub mod map;
 pub mod turn_engine;
-pub mod turn_queue;
 
 use ai::*;
 use animation::*;
