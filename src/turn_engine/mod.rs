@@ -30,49 +30,66 @@ where
     }
 }
 
-trait AnyRunner<T, Out = ()>: Send + Sync {
-    fn run(&mut self, input: T, world: &mut World) -> Out;
+trait AnyRunner<InDyn, Out = ()>: Send + Sync {
+    fn run(&mut self, input: InDyn, world: &mut World) -> Out;
 }
 
-impl<A: Action, S> AnyRunner<AnyAction, EffectQueue> for TypedSystemRunner<A, EffectQueue, S>
+trait DynamicWrapper<T> {
+    fn downcast(self) -> Option<T>;
+}
+trait InnerType {
+    fn inner_type(&self) -> TypeId;
+}
+
+impl<InDyn, In, Out, S> AnyRunner<InDyn, Out> for TypedSystemRunner<In, Out, S>
 where
-    S: System<In = A, Out = EffectQueue>,
+    InDyn: DynamicWrapper<In>,
+    S: System<In = In, Out = Out>,
+    Out: Default,
 {
-    fn run(&mut self, action: AnyAction, world: &mut World) -> EffectQueue {
-        if let Ok(action) = action.0.downcast::<A>() {
+    fn run(&mut self, action: InDyn, world: &mut World) -> Out {
+        if let Some(input) = action.downcast() {
             if !self.initialized {
                 self.system.initialize(world);
                 self.initialized = true;
             }
-            let effects = self.system.run(*action, world);
+            let res = self.system.run(input, world);
             self.system.apply_buffers(world);
-            effects
+            res
         } else {
-            EffectQueue::default()
+            Default::default()
         }
     }
 }
 
-impl<E: Effect, S> AnyRunner<AnyEffect> for TypedSystemRunner<E, (), S>
-where
-    S: System<In = E, Out = ()>,
-{
-    fn run(&mut self, effect: AnyEffect, world: &mut World) {
-        if let Ok(effect) = effect.0.downcast::<E>() {
-            if !self.initialized {
-                self.system.initialize(world);
-                self.initialized = true;
-            }
-            self.system.run(*effect, world);
-            self.system.apply_buffers(world);
+struct SystemRegistry<InDyn, Out> {
+    pub map: HashMap<TypeId, Box<dyn AnyRunner<InDyn, Out>>>,
+}
+
+impl<InDyn, Out> Default for SystemRegistry<InDyn, Out> {
+    fn default() -> Self {
+        Self {
+            map: Default::default(),
+        }
+    }
+}
+
+impl<InDyn: InnerType, Out: Default> AnyRunner<InDyn, Out> for SystemRegistry<InDyn, Out> {
+    fn run(&mut self, input: InDyn, world: &mut World) -> Out {
+        let input_type = input.inner_type();
+        if let Some(handler) = self.map.get_mut(&input_type) {
+            handler.run(input, world)
+        } else {
+            eprintln!("Could not find runner for {:?}", input_type);
+            Default::default()
         }
     }
 }
 
 #[derive(Default)]
 pub struct TurnSystems {
-    effects: HashMap<TypeId, Box<dyn AnyRunner<AnyEffect>>>,
-    actions: HashMap<TypeId, Box<dyn AnyRunner<AnyAction, EffectQueue>>>,
+    effects: SystemRegistry<AnyEffect, ()>,
+    actions: SystemRegistry<AnyAction, EffectQueue>,
 }
 
 impl TurnSystems {
@@ -81,17 +98,12 @@ impl TurnSystems {
         system: impl System<In = A, Out = EffectQueue>,
     ) {
         self.actions
+            .map
             .insert(TypeId::of::<A>(), Box::new(TypedSystemRunner::new(system)));
     }
 
     pub fn run_action_system(&mut self, action: AnyAction, world: &mut World) -> EffectQueue {
-        let action_type = action.inner_type();
-        if let Some(handler) = self.actions.get_mut(&action_type) {
-            handler.run(action, world)
-        } else {
-            eprintln!("Could not find scheduler for action {:?}", action_type);
-            EffectQueue::default()
-        }
+        self.actions.run(action, world)
     }
 
     pub fn register_effect_handler<E: Effect + 'static>(
@@ -99,16 +111,12 @@ impl TurnSystems {
         system: impl System<In = E, Out = ()>,
     ) {
         self.effects
+            .map
             .insert(TypeId::of::<E>(), Box::new(TypedSystemRunner::new(system)));
     }
 
     pub fn run_effect_system(&mut self, effect: AnyEffect, world: &mut World) {
-        let effect_type = effect.inner_type();
-        if let Some(handler) = self.effects.get_mut(&effect_type) {
-            handler.run(effect, world);
-        } else {
-            eprintln!("Could not find scheduler for effect {:?}", effect_type);
-        }
+        self.effects.run(effect, world)
     }
 }
 

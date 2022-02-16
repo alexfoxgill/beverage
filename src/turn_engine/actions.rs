@@ -3,14 +3,22 @@ use std::collections::VecDeque;
 
 use downcast_rs::*;
 
+use super::{DynamicWrapper, InnerType};
+
 pub trait Action: Downcast + Send + Sync + std::fmt::Debug {}
 impl_downcast!(Action);
 
 #[derive(Debug)]
 pub struct AnyAction(pub Box<dyn Action>);
 
-impl AnyAction {
-    pub fn inner_type(&self) -> TypeId {
+impl<T: Action> DynamicWrapper<T> for AnyAction {
+    fn downcast(self) -> Option<T> {
+        let res = self.0.downcast::<T>().ok()?;
+        Some(*res)
+    }
+}
+impl InnerType for AnyAction {
+    fn inner_type(&self) -> TypeId {
         (&*self.0).as_any().type_id()
     }
 }

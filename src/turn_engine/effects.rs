@@ -3,14 +3,23 @@ use std::collections::VecDeque;
 
 use downcast_rs::*;
 
+use super::{DynamicWrapper, InnerType};
+
 pub trait Effect: Downcast + Send + Sync + std::fmt::Debug {}
 impl_downcast!(Effect);
 
 #[derive(Debug)]
 pub struct AnyEffect(pub Box<dyn Effect>);
 
-impl AnyEffect {
-    pub fn inner_type(&self) -> TypeId {
+impl<T: Effect> DynamicWrapper<T> for AnyEffect {
+    fn downcast(self) -> Option<T> {
+        let res = self.0.downcast::<T>().ok()?;
+        Some(*res)
+    }
+}
+
+impl InnerType for AnyEffect {
+    fn inner_type(&self) -> TypeId {
         (&*self.0).as_any().type_id()
     }
 }
