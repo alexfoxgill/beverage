@@ -17,9 +17,9 @@ impl Plugin for DomainEffectsPlugin {
 }
 
 fn setup(mut systems: ResMut<TurnSystems>) {
-    systems.register_effect_handler(end_turn::handler.system());
-    systems.register_effect_handler(energy_cost::handler.system());
-    systems.register_effect_handler(face::handler.system());
-    systems.register_effect_handler(kill::handler.system());
-    systems.register_effect_handler(move_entity::handler.system());
+    systems.register_effect_handler(end_turn::handler);
+    systems.register_effect_handler(energy_cost::handler);
+    systems.register_effect_handler(face::handler);
+    systems.register_effect_handler(kill::handler);
+    systems.register_effect_handler(move_entity::handler);
 }

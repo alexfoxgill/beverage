@@ -17,9 +17,9 @@ impl Plugin for DomainActionsPlugin {
 }
 
 fn setup(mut systems: ResMut<TurnSystems>) {
-    systems.register_action_handler(backstep::handler.system());
-    systems.register_action_handler(end_turn::handler.system());
-    systems.register_action_handler(rotate::handler.system());
-    systems.register_action_handler(step::handler.system());
-    systems.register_action_handler(strike::handler.system());
+    systems.register_action_handler(backstep::handler);
+    systems.register_action_handler(end_turn::handler);
+    systems.register_action_handler(rotate::handler);
+    systems.register_action_handler(step::handler);
+    systems.register_action_handler(strike::handler);
 }

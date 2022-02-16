@@ -62,17 +62,19 @@ where
     }
 }
 
-struct SystemRegistry<InDyn, Out> {
-    pub map: HashMap<TypeId, Box<dyn AnyRunner<InDyn, Out>>>,
+struct SystemRegistry<InDyn, Out = ()> {
+    map: HashMap<TypeId, Box<dyn AnyRunner<InDyn, Out>>>,
 }
 
 impl<InDyn, Out: Default + 'static> SystemRegistry<InDyn, Out> {
-    pub fn register_system<In: 'static>(&mut self, system: impl System<In = In, Out = Out>)
+    pub fn register_system<In: 'static, Params>(&mut self, system: impl IntoSystem<In, Out, Params>)
     where
         InDyn: DynamicWrapper<In>,
     {
-        self.map
-            .insert(TypeId::of::<In>(), Box::new(TypedSystemRunner::new(system)));
+        self.map.insert(
+            TypeId::of::<In>(),
+            Box::new(TypedSystemRunner::new(system.system())),
+        );
     }
 }
 
@@ -98,14 +100,14 @@ impl<InDyn: InnerType, Out: Default> AnyRunner<InDyn, Out> for SystemRegistry<In
 
 #[derive(Default)]
 pub struct TurnSystems {
-    effects: SystemRegistry<AnyEffect, ()>,
+    effects: SystemRegistry<AnyEffect>,
     actions: SystemRegistry<AnyAction, EffectQueue>,
 }
 
 impl TurnSystems {
-    pub fn register_action_handler<A: Action + 'static>(
+    pub fn register_action_handler<A: Action + 'static, Params>(
         &mut self,
-        system: impl System<In = A, Out = EffectQueue>,
+        system: impl IntoSystem<A, EffectQueue, Params>,
     ) {
         self.actions.register_system(system);
     }
@@ -114,9 +116,9 @@ impl TurnSystems {
         self.actions.run(action, world)
     }
 
-    pub fn register_effect_handler<E: Effect + 'static>(
+    pub fn register_effect_handler<E: Effect + 'static, Params>(
         &mut self,
-        system: impl System<In = E, Out = ()>,
+        system: impl IntoSystem<E, (), Params>,
     ) {
         self.effects.register_system(system);
     }
