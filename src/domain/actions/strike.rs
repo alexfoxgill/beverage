@@ -24,17 +24,17 @@ pub fn handler(
     query: Query<(&HexPos, &Facing, &Actor)>,
     targets: Query<(&HexPos, Entity), With<Actor>>,
 ) -> EffectQueue {
-    let mut effects = EffectQueue::default();
     if let Ok((pos, facing, actor)) = query.get(attacker) {
         if actor.actions_remaining > 0 {
             let coord_to_attack = pos.get_facing(facing.0);
-            effects.push(EnergyCostEffect::new(attacker, ActionCost::All));
+            let mut effects = EffectQueue::new(EnergyCostEffect::new(attacker, ActionCost::All));
             for (pos, e) in targets.iter() {
                 if pos.0 == coord_to_attack {
                     effects.push(KillEffect::new(e));
                 }
             }
+            return effects;
         }
     }
-    effects
+    Default::default()
 }

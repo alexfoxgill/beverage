@@ -21,10 +21,9 @@ impl RotateAction {
 impl Action for RotateAction {}
 
 pub fn handler(In(action): In<RotateAction>, query: Query<&Facing>) -> EffectQueue {
-    let mut effects = EffectQueue::default();
     if let Ok(facing) = query.get(action.entity) {
         let target = facing.rotated(action.angle);
-        effects.push(FaceEffect::new(action.entity, target));
+        return EffectQueue::new(FaceEffect::new(action.entity, target));
     }
-    effects
+    Default::default()
 }

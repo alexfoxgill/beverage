@@ -27,6 +27,15 @@ impl EffectQueue {
         self.0.push_back(AnyEffect(Box::new(effect)));
     }
 
+    pub fn new<T: Effect + 'static>(effect: T) -> Self {
+        Self::default().with(effect)
+    }
+
+    pub fn with<T: Effect + 'static>(mut self, effect: T) -> Self {
+        self.0.push_back(AnyEffect(Box::new(effect)));
+        self
+    }
+
     pub fn append(&mut self, mut other: EffectQueue) {
         self.0.append(&mut other.0);
     }

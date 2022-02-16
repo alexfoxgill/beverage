@@ -24,17 +24,16 @@ pub fn handler(
     actors: Query<(&Actor, &HexPos, &Facing)>,
     map_tiles: Query<&HexPos, With<MapTile>>,
 ) -> EffectQueue {
-    let mut effects = EffectQueue::default();
     if let Ok((actor, pos, facing)) = actors.get(entity) {
         let cost = 2;
         if actor.actions_remaining >= cost {
             let to = pos.get_facing(-facing.0);
 
             if map_tiles.iter().any(|x| x.0 == to) {
-                effects.push(EnergyCostEffect::new(entity, ActionCost::Fixed(cost)));
-                effects.push(MoveEffect::new(entity, to));
+                return EffectQueue::new(EnergyCostEffect::new(entity, ActionCost::Fixed(cost)))
+                    .with(MoveEffect::new(entity, to));
             }
         }
     }
-    effects
+    Default::default()
 }
