@@ -11,6 +11,12 @@ impl_downcast!(Effect);
 #[derive(Debug)]
 pub struct AnyEffect(pub Box<dyn Effect>);
 
+impl<E: Effect> From<E> for AnyEffect {
+    fn from(effect: E) -> Self {
+        AnyEffect(Box::new(effect))
+    }
+}
+
 impl<T: Effect> DynamicWrapper<T> for AnyEffect {
     fn downcast(self) -> Option<T> {
         let res = self.0.downcast::<T>().ok()?;
@@ -27,21 +33,40 @@ impl InnerType for AnyEffect {
 #[derive(Default)]
 pub struct EffectQueue(pub VecDeque<AnyEffect>);
 
+impl<E, const N: usize> From<[E; N]> for EffectQueue
+where
+    EffectQueue: Extend<E>,
+{
+    fn from(arr: [E; N]) -> Self {
+        let mut queue = EffectQueue::default();
+        queue.extend(arr);
+        queue
+    }
+}
+
+impl<E: Into<AnyEffect>> Extend<E> for EffectQueue {
+    fn extend<T: IntoIterator<Item = E>>(&mut self, iter: T) {
+        for x in iter {
+            self.push(x.into())
+        }
+    }
+}
+
 impl EffectQueue {
     pub fn pop(&mut self) -> Option<AnyEffect> {
         self.0.pop_front()
     }
 
-    pub fn push<T: Effect + 'static>(&mut self, effect: T) {
-        self.0.push_back(AnyEffect(Box::new(effect)));
+    pub fn push<T: Into<AnyEffect>>(&mut self, effect: T) {
+        self.0.push_back(effect.into());
     }
 
-    pub fn new<T: Effect + 'static>(effect: T) -> Self {
+    pub fn new<T: Into<AnyEffect>>(effect: T) -> Self {
         Self::default().with(effect)
     }
 
-    pub fn with<T: Effect + 'static>(mut self, effect: T) -> Self {
-        self.0.push_back(AnyEffect(Box::new(effect)));
+    pub fn with<T: Into<AnyEffect>>(mut self, effect: T) -> Self {
+        self.0.push_back(effect.into());
         self
     }
 

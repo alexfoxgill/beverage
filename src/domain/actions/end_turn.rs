@@ -1,6 +1,9 @@
 use crate::{
     domain::effects::end_turn::EndTurnEffect,
-    turn_engine::{actions::Action, effects::EffectQueue},
+    turn_engine::{
+        actions::{Action, ActionQueue},
+        effects::EffectQueue,
+    },
 };
 use bevy::prelude::*;
 
@@ -14,6 +17,10 @@ impl EndTurnAction {
 }
 
 impl Action for EndTurnAction {}
+
+pub fn generator(In(e): In<Entity>) -> ActionQueue {
+    ActionQueue::new(EndTurnAction::new(e))
+}
 
 pub fn handler(In(EndTurnAction(entity)): In<EndTurnAction>) -> EffectQueue {
     EffectQueue::new(EndTurnEffect::new(entity))

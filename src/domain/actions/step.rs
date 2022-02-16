@@ -5,7 +5,7 @@ use crate::{
         move_entity::MoveEffect,
     },
     map::MapTile,
-    turn_engine::{actions::Action, effects::EffectQueue},
+    turn_engine::{actions::{Action, ActionQueue}, effects::EffectQueue},
 };
 use bevy::prelude::*;
 
@@ -18,6 +18,10 @@ impl StepAction {
     }
 }
 impl Action for StepAction {}
+
+pub fn generator(In(e): In<Entity>) -> ActionQueue {
+    ActionQueue::new(StepAction(e))
+}
 
 pub fn handler(
     In(StepAction(entity)): In<StepAction>,

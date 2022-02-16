@@ -5,7 +5,10 @@ use crate::{
         move_entity::MoveEffect,
     },
     map::MapTile,
-    turn_engine::{actions::Action, effects::EffectQueue},
+    turn_engine::{
+        actions::{Action, ActionQueue},
+        effects::EffectQueue,
+    },
 };
 use bevy::prelude::*;
 
@@ -18,6 +21,10 @@ impl BackstepAction {
     }
 }
 impl Action for BackstepAction {}
+
+pub fn generator(In(e): In<Entity>) -> ActionQueue {
+    ActionQueue::new(BackstepAction(e))
+}
 
 pub fn handler(
     In(BackstepAction(entity)): In<BackstepAction>,

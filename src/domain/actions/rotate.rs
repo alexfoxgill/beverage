@@ -1,7 +1,10 @@
 use crate::{
     domain::common::*,
     domain::effects::face::FaceEffect,
-    turn_engine::{actions::Action, effects::EffectQueue},
+    turn_engine::{
+        actions::{Action, ActionQueue},
+        effects::EffectQueue,
+    },
 };
 use bevy::prelude::*;
 use hex2d::Angle;
@@ -19,6 +22,13 @@ impl RotateAction {
 }
 
 impl Action for RotateAction {}
+
+pub fn generator(In(e): In<Entity>) -> ActionQueue {
+    ActionQueue::from([
+        RotateAction::new(e, Angle::Left),
+        RotateAction::new(e, Angle::Right),
+    ])
+}
 
 pub fn handler(In(action): In<RotateAction>, query: Query<&Facing>) -> EffectQueue {
     if let Ok(facing) = query.get(action.entity) {
