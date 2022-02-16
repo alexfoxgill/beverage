@@ -21,13 +21,20 @@ impl Action for StepAction {}
 
 pub fn handler(
     In(StepAction(entity)): In<StepAction>,
-    actors: Query<(&Actor, &HexPos, &Facing)>,
+    actor: Query<(&Actor, &HexPos, &Facing)>,
+    occupied: Query<&HexPos, With<Actor>>,
     map_tiles: Query<&HexPos, With<MapTile>>,
 ) -> EffectQueue {
-    if let Ok((actor, pos, facing)) = actors.get(entity) {
+    if let Ok((actor, pos, facing)) = actor.get(entity) {
         let cost = 1;
         let to = pos.get_facing(facing.0);
-        if actor.actions_remaining >= cost && map_tiles.iter().any(|x| x.0 == to) {
+        if actor.actions_remaining < cost {
+            return Default::default();
+        }
+        if occupied.iter().any(|x| x.0 == to) {
+            return Default::default();
+        }
+        if map_tiles.iter().any(|x| x.0 == to) {
             return EffectQueue::new(EnergyCostEffect::new(entity, ActionCost::Fixed(cost)))
                 .with(MoveEffect::new(entity, to));
         }
