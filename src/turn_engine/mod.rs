@@ -66,6 +66,16 @@ struct SystemRegistry<InDyn, Out> {
     pub map: HashMap<TypeId, Box<dyn AnyRunner<InDyn, Out>>>,
 }
 
+impl<InDyn, Out: Default + 'static> SystemRegistry<InDyn, Out> {
+    pub fn register_system<In: 'static>(&mut self, system: impl System<In = In, Out = Out>)
+    where
+        InDyn: DynamicWrapper<In>,
+    {
+        self.map
+            .insert(TypeId::of::<In>(), Box::new(TypedSystemRunner::new(system)));
+    }
+}
+
 impl<InDyn, Out> Default for SystemRegistry<InDyn, Out> {
     fn default() -> Self {
         Self {
@@ -97,9 +107,7 @@ impl TurnSystems {
         &mut self,
         system: impl System<In = A, Out = EffectQueue>,
     ) {
-        self.actions
-            .map
-            .insert(TypeId::of::<A>(), Box::new(TypedSystemRunner::new(system)));
+        self.actions.register_system(system);
     }
 
     pub fn run_action_system(&mut self, action: AnyAction, world: &mut World) -> EffectQueue {
@@ -110,9 +118,7 @@ impl TurnSystems {
         &mut self,
         system: impl System<In = E, Out = ()>,
     ) {
-        self.effects
-            .map
-            .insert(TypeId::of::<E>(), Box::new(TypedSystemRunner::new(system)));
+        self.effects.register_system(system);
     }
 
     pub fn run_effect_system(&mut self, effect: AnyEffect, world: &mut World) {
