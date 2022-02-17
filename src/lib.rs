@@ -2,12 +2,13 @@ use bevy::prelude::*;
 
 use bevy_easings::EasingsPlugin;
 use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*, shapes::Circle};
-use hex2d::*;
 use domain::turn_queue::{TurnQueue, TurnQueuePlugin};
+use hex2d::*;
 use wasm_bindgen::prelude::*;
 
 pub mod ai;
 pub mod animation;
+pub mod component_index;
 pub mod domain;
 pub mod intention;
 pub mod map;
