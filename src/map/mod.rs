@@ -89,17 +89,12 @@ fn floor_hex(radius: usize) -> HashMap<Coordinate, MapCell> {
 }
 
 fn surround_wall(map: &mut HashMap<Coordinate, MapCell>) {
-    let mut walls = HashSet::<Coordinate>::default();
-
-    for (pos, cell) in map.iter() {
-        if cell.terrain == Terrain::Floor {
-            for n in pos.neighbors() {
-                if !map.contains_key(&n) {
-                    walls.insert(n);
-                }
-            }
-        }
-    }
+    let walls: HashSet<_> = map
+        .iter()
+        .filter(|(_, c)| c.terrain == Terrain::Floor)
+        .flat_map(|(pos, _)| pos.neighbors())
+        .filter(|n| !map.contains_key(n))
+        .collect();
 
     for wall in walls.iter() {
         map.insert(
@@ -128,7 +123,7 @@ fn random_noise(coordinates: impl Iterator<Item = Coordinate>) -> HashMap<Coordi
                 },
             )
         })
-        .collect::<HashMap<_, _>>()
+        .collect()
 }
 
 pub struct CellularAutomata {
