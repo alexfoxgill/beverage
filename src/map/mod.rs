@@ -36,14 +36,12 @@ pub struct Map {
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub struct MapCell {
     pub terrain: Terrain,
-    pub enemy: Option<HexDirection>,
 }
 
 impl MapCell {
     fn floor() -> MapCell {
         MapCell {
             terrain: Terrain::Floor,
-            enemy: None,
         }
     }
 }
@@ -66,13 +64,6 @@ impl MapGenerator for BasicHex {
     fn generate_map(&self) -> Map {
         let mut cells = floor_hex(self.radius);
         surround_wall(&mut cells);
-
-        if let Some(cell) = cells.get_mut(&Coordinate::new(-2, -2)) {
-            cell.enemy = Some(HexDirection::YZ);
-        }
-        if let Some(cell) = cells.get_mut(&Coordinate::new(2, 2)) {
-            cell.enemy = Some(HexDirection::ZY);
-        }
 
         Map {
             cells,
@@ -101,7 +92,6 @@ fn surround_wall(map: &mut HashMap<Coordinate, MapCell>) {
             *wall,
             MapCell {
                 terrain: Terrain::Wall,
-                enemy: None,
             },
         );
     }
@@ -119,7 +109,6 @@ fn random_noise(coordinates: impl Iterator<Item = Coordinate>) -> HashMap<Coordi
                     } else {
                         Terrain::Wall
                     },
-                    enemy: None,
                 },
             )
         })

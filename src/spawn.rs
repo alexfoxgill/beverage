@@ -9,6 +9,7 @@ use bevy_prototype_lyon::entity::ShapeBundle;
 use bevy_prototype_lyon::prelude::*;
 use bevy_prototype_lyon::shapes::*;
 use hex2d::*;
+use rand::prelude::*;
 
 #[derive(Bundle)]
 struct ActorBundle {
@@ -78,10 +79,14 @@ pub fn spawn_map_entities(
 
     spawn_player(commands, turn_queue, map.player_start);
 
-    for (&c, cell) in map.cells.iter() {
-        if let Some(dir) = cell.enemy {
-            spawn_enemy(commands, turn_queue, c, dir);
-        }
+    for c in map
+        .cells
+        .iter()
+        .filter(|(c, cell)| c.distance(map.player_start) > 2 && cell.terrain == Terrain::Floor)
+        .map(|(c, _)| c)
+        .choose_multiple(&mut thread_rng(), 3)
+    {
+        spawn_enemy(commands, turn_queue, *c);
     }
 
     map_entity
@@ -141,10 +146,9 @@ pub fn spawn_enemy(
     commands: &mut Commands,
     turn_queue: &mut TurnQueue,
     coordinate: Coordinate,
-    direction: HexDirection,
 ) -> Entity {
     let enemy = commands
-        .spawn_bundle(new_enemy(coordinate, direction))
+        .spawn_bundle(new_enemy(coordinate))
         .with_children(|parent| {
             parent.spawn_bundle(direction_indicator());
         })
@@ -170,8 +174,9 @@ fn direction_indicator() -> ShapeBundle {
     )
 }
 
-fn new_enemy(coord: Coordinate, direction: HexDirection) -> AiBundle {
-    let facing = Facing(direction);
+fn new_enemy(coord: Coordinate) -> AiBundle {
+    let direction = HexDirection::all().choose(&mut thread_rng()).unwrap();
+    let facing = Facing(*direction);
     let pos = HexPos(coord);
     let shape = GeometryBuilder::build_as(
         &Circle {
