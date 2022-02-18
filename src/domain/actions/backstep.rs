@@ -4,7 +4,7 @@ use crate::{
         energy_cost::{ActionCost, EnergyCostEffect},
         move_entity::MoveEffect,
     },
-    map::MapTile,
+    map::{MapTile, Terrain},
     turn_engine::{
         actions::{Action, ActionQueue},
         effects::EffectQueue,
@@ -28,18 +28,25 @@ pub fn generator(In(e): In<Entity>) -> ActionQueue {
 
 pub fn handler(
     In(BackstepAction(entity)): In<BackstepAction>,
-    actors: Query<(&Actor, &HexPos, &Facing)>,
-    map_tiles: Query<&HexPos, With<MapTile>>,
+    actor: Query<(&Actor, &HexPos, &Facing)>,
+    occupied: Query<&HexPos, With<Actor>>,
+    map_tiles: Query<(&HexPos, &MapTile)>,
 ) -> EffectQueue {
-    if let Ok((actor, pos, facing)) = actors.get(entity) {
+    if let Ok((actor, pos, facing)) = actor.get(entity) {
         let cost = 2;
-        if actor.actions_remaining >= cost {
-            let to = pos.get_facing(-facing.0);
-
-            if map_tiles.iter().any(|x| x.0 == to) {
-                return EffectQueue::new(EnergyCostEffect::new(entity, ActionCost::Fixed(cost)))
-                    .with(MoveEffect::new(entity, to));
-            }
+        let to = pos.get_facing(-facing.0);
+        if actor.actions_remaining < cost {
+            return Default::default();
+        }
+        if occupied.iter().any(|x| x.0 == to) {
+            return Default::default();
+        }
+        if map_tiles
+            .iter()
+            .any(|(x, tile)| x.0 == to && tile.terrain == Terrain::Floor)
+        {
+            return EffectQueue::new(EnergyCostEffect::new(entity, ActionCost::Fixed(cost)))
+                .with(MoveEffect::new(entity, to));
         }
     }
     Default::default()

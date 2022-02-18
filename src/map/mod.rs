@@ -1,6 +1,7 @@
-use std::iter;
-
-use bevy::{prelude::*, utils::HashMap};
+use bevy::{
+    prelude::*,
+    utils::{HashMap, HashSet},
+};
 
 use hex2d::{Direction as HexDirection, *};
 use rand::prelude::*;
@@ -17,20 +18,13 @@ impl Plugin for MapPlugin {
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Terrain {
-    Grass,
-    Water,
+    Floor,
+    Impassable,
 }
 
 #[derive(Component)]
 pub struct MapTile {
     pub terrain: Terrain,
-}
-
-impl Terrain {
-    pub fn random() -> Self {
-        let mut rng = thread_rng();
-        *[Terrain::Grass, Terrain::Water].choose(&mut rng).unwrap()
-    }
 }
 
 pub struct Map {
@@ -45,27 +39,23 @@ pub struct MapCell {
 }
 
 pub trait MapGenerator {
-    fn generate_map() -> Map;
+    fn generate_map(&self) -> Map;
 }
 
-pub struct SmallHex;
+pub struct BasicHex {
+    radius: usize,
+}
 
-impl MapGenerator for SmallHex {
-    fn generate_map() -> Map {
-        let center: Coordinate<i32> = Coordinate::new(0, 0);
-        let tiles = (1..5)
-            .flat_map(|i| center.ring_iter(i, Spin::CW(XY)))
-            .chain(iter::once(center))
-            .map(|x| {
-                (
-                    x,
-                    MapCell {
-                        terrain: Terrain::random(),
-                        enemy: None,
-                    },
-                )
-            });
-        let mut cells = HashMap::from_iter(tiles);
+impl BasicHex {
+    pub fn new(radius: usize) -> BasicHex {
+        BasicHex { radius }
+    }
+}
+
+impl MapGenerator for BasicHex {
+    fn generate_map(&self) -> Map {
+        let mut cells = floor_hex(self.radius);
+        surround_wall(&mut cells);
 
         if let Some(cell) = cells.get_mut(&Coordinate::new(-2, -2)) {
             cell.enemy = Some(HexDirection::YZ);
@@ -76,11 +66,84 @@ impl MapGenerator for SmallHex {
 
         Map {
             cells,
-            player_start: Coordinate::new(0, 0)
-                + HexDirection::ZY
-                + HexDirection::ZY
-                + HexDirection::ZY,
-            goal: Coordinate::new(0, 0) + HexDirection::YZ + HexDirection::YZ + HexDirection::YZ,
+            player_start: Coordinate::new(0, -(self.radius as i32 - 2)),
+            goal: Coordinate::new(0, 3),
+        }
+    }
+}
+
+fn floor_hex(radius: usize) -> HashMap<Coordinate, MapCell> {
+    Coordinate::new(0, 0)
+        .range_iter(radius as i32)
+        .map(|x| {
+            (
+                x,
+                MapCell {
+                    terrain: Terrain::Floor,
+                    enemy: None,
+                },
+            )
+        })
+        .collect()
+}
+
+fn surround_wall(map: &mut HashMap<Coordinate, MapCell>) {
+    let mut walls = HashSet::<Coordinate>::default();
+
+    for (pos, cell) in map.iter() {
+        if cell.terrain == Terrain::Floor {
+            for n in pos.neighbors() {
+                if !map.contains_key(&n) {
+                    walls.insert(n);
+                }
+            }
+        }
+    }
+
+    for wall in walls.iter() {
+        map.insert(
+            *wall,
+            MapCell {
+                terrain: Terrain::Impassable,
+                enemy: None,
+            },
+        );
+    }
+}
+
+fn random_noise<R: Rng>(
+    rng: &mut R,
+    coordinates: impl Iterator<Item = Coordinate>,
+) -> HashMap<Coordinate, MapCell> {
+    coordinates
+        .map(|c| {
+            (
+                c,
+                MapCell {
+                    terrain: if rng.gen::<bool>() {
+                        Terrain::Floor
+                    } else {
+                        Terrain::Impassable
+                    },
+                    enemy: None,
+                },
+            )
+        })
+        .collect::<HashMap<_, _>>()
+}
+
+pub struct CellularAutomata;
+
+impl MapGenerator for CellularAutomata {
+    fn generate_map(&self) -> Map {
+        let mut rng = thread_rng();
+
+        let cells = random_noise(&mut rng, Coordinate::new(0, 0).range_iter(5));
+
+        Map {
+            cells,
+            player_start: Coordinate::new(0, 0),
+            goal: Coordinate::new(0, 0),
         }
     }
 }

@@ -45,7 +45,7 @@ pub fn spawn_map_entities(
         RegularPolygon {
             sides: 6,
             feature: RegularPolygonFeature::Radius(40.0),
-            center: Vec2::new(x, y),
+            center: Vec2::new(x, -y),
         }
     }
     let map_entity = commands
@@ -53,8 +53,8 @@ pub fn spawn_map_entities(
         .with_children(|parent| {
             for (&c, cell) in map.cells.iter() {
                 let color = match cell.terrain {
-                    Terrain::Grass => Color::OLIVE,
-                    Terrain::Water => Color::TEAL,
+                    Terrain::Floor => Color::OLIVE,
+                    Terrain::Impassable => Color::MIDNIGHT_BLUE,
                 };
                 let draw_mode = DrawMode::Outlined {
                     fill_mode: FillMode::color(color),
@@ -183,8 +183,8 @@ fn new_enemy(coord: Coordinate, direction: HexDirection) -> AiBundle {
     );
 
     let actor = Actor {
-        actions_per_turn: 1,
-        actions_remaining: 1,
+        actions_per_turn: 2,
+        actions_remaining: 2,
     };
 
     AiBundle {

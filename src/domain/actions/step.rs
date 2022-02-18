@@ -4,8 +4,11 @@ use crate::{
         energy_cost::{ActionCost, EnergyCostEffect},
         move_entity::MoveEffect,
     },
-    map::MapTile,
-    turn_engine::{actions::{Action, ActionQueue}, effects::EffectQueue},
+    map::{MapTile, Terrain},
+    turn_engine::{
+        actions::{Action, ActionQueue},
+        effects::EffectQueue,
+    },
 };
 use bevy::prelude::*;
 
@@ -27,7 +30,7 @@ pub fn handler(
     In(StepAction(entity)): In<StepAction>,
     actor: Query<(&Actor, &HexPos, &Facing)>,
     occupied: Query<&HexPos, With<Actor>>,
-    map_tiles: Query<&HexPos, With<MapTile>>,
+    map_tiles: Query<(&HexPos, &MapTile)>,
 ) -> EffectQueue {
     if let Ok((actor, pos, facing)) = actor.get(entity) {
         let cost = 1;
@@ -38,7 +41,10 @@ pub fn handler(
         if occupied.iter().any(|x| x.0 == to) {
             return Default::default();
         }
-        if map_tiles.iter().any(|x| x.0 == to) {
+        if map_tiles
+            .iter()
+            .any(|(x, tile)| x.0 == to && tile.terrain == Terrain::Floor)
+        {
             return EffectQueue::new(EnergyCostEffect::new(entity, ActionCost::Fixed(cost)))
                 .with(MoveEffect::new(entity, to));
         }
