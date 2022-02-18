@@ -1,6 +1,7 @@
 use crate::ai::*;
 use crate::domain::common::*;
 use crate::domain::turn_queue::TurnQueue;
+use crate::intention::PlayerControlled;
 use crate::map::*;
 use crate::Player;
 use bevy::prelude::*;
@@ -24,6 +25,7 @@ struct PlayerBundle {
     #[bundle]
     actor: ActorBundle,
 
+    player_controlled: PlayerControlled,
     player: Player,
 }
 
@@ -130,6 +132,7 @@ fn new_player(coord: Coordinate) -> PlayerBundle {
             actor,
         },
 
+        player_controlled: PlayerControlled,
         player: Player,
     }
 }

@@ -57,8 +57,6 @@ impl Plugin for GamePlugin {
     }
 }
 
-#[derive(Component)]
-pub struct Player;
 fn setup(mut commands: Commands, mut turn_queue: ResMut<TurnQueue>) {
     // cameras
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
@@ -68,3 +66,6 @@ fn setup(mut commands: Commands, mut turn_queue: ResMut<TurnQueue>) {
 
     spawn_map_entities(&mut commands, &mut turn_queue, &map);
 }
+
+#[derive(Component)]
+pub struct Player;

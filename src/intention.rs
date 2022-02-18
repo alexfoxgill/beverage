@@ -9,7 +9,9 @@ use crate::domain::actions::step::StepAction;
 use crate::domain::actions::strike::StrikeAction;
 use crate::domain::turn_queue::*;
 use crate::turn_engine::actions::ActionQueue;
-use crate::Player;
+
+#[derive(Component)]
+pub struct PlayerControlled;
 
 pub struct IntentionPlugin;
 
@@ -38,7 +40,7 @@ struct IntentionProducer;
 
 fn ingame_keyboard_input(
     keys: Res<Input<KeyCode>>,
-    players: Query<(), With<Player>>,
+    players: Query<(), With<PlayerControlled>>,
     turn_queue: Res<TurnQueue>,
     mut ev_intention: EventWriter<IntentionEvent>,
 ) {
