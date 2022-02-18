@@ -64,11 +64,7 @@ fn setup(mut commands: Commands, mut turn_queue: ResMut<TurnQueue>) {
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
     commands.spawn_bundle(UiCameraBundle::default());
 
-    let map = CellularAutomata::new(8, 10, |x| match x {
-        0 | 1 | 4 | 5 => Terrain::Wall,
-        _ => Terrain::Floor,
-    })
-    .generate_map();
+    let map = DrunkardsWalk::example().generate_map();
 
     spawn_map_entities(&mut commands, &mut turn_queue, &map);
 }

@@ -4,6 +4,7 @@ use bevy::{
 };
 
 use hex2d::{Direction as HexDirection, *};
+use itertools::iterate;
 use rand::prelude::*;
 
 use crate::{component_index::ComponentIndex, domain::common::HexPos};
@@ -30,13 +31,21 @@ pub struct MapTile {
 pub struct Map {
     pub cells: HashMap<Coordinate, MapCell>,
     pub player_start: Coordinate,
-    pub goal: Coordinate,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub struct MapCell {
     pub terrain: Terrain,
     pub enemy: Option<HexDirection>,
+}
+
+impl MapCell {
+    fn floor() -> MapCell {
+        MapCell {
+            terrain: Terrain::Floor,
+            enemy: None,
+        }
+    }
 }
 
 pub trait MapGenerator {
@@ -68,7 +77,6 @@ impl MapGenerator for BasicHex {
         Map {
             cells,
             player_start: Coordinate::new(0, -(self.radius as i32 - 2)),
-            goal: Coordinate::new(0, 3),
         }
     }
 }
@@ -76,15 +84,7 @@ impl MapGenerator for BasicHex {
 fn floor_hex(radius: usize) -> HashMap<Coordinate, MapCell> {
     Coordinate::new(0, 0)
         .range_iter(radius as i32)
-        .map(|x| {
-            (
-                x,
-                MapCell {
-                    terrain: Terrain::Floor,
-                    enemy: None,
-                },
-            )
-        })
+        .map(|x| (x, MapCell::floor()))
         .collect()
 }
 
@@ -112,10 +112,8 @@ fn surround_wall(map: &mut HashMap<Coordinate, MapCell>) {
     }
 }
 
-fn random_noise<R: Rng>(
-    rng: &mut R,
-    coordinates: impl Iterator<Item = Coordinate>,
-) -> HashMap<Coordinate, MapCell> {
+fn random_noise(coordinates: impl Iterator<Item = Coordinate>) -> HashMap<Coordinate, MapCell> {
+    let mut rng = thread_rng();
     coordinates
         .map(|c| {
             (
@@ -140,6 +138,13 @@ pub struct CellularAutomata {
 }
 
 impl CellularAutomata {
+    pub fn example() -> CellularAutomata {
+        CellularAutomata::new(8, 10, |x| match x {
+            0 | 1 | 5 => Terrain::Wall,
+            _ => Terrain::Floor,
+        })
+    }
+
     pub fn new(radius: usize, iterations: usize, rule: fn(usize) -> Terrain) -> CellularAutomata {
         CellularAutomata {
             radius,
@@ -177,23 +182,81 @@ impl CellularAutomata {
     }
 }
 
+fn choose_random(cells: &HashMap<Coordinate, MapCell>) -> Coordinate {
+    let mut rng = thread_rng();
+    *cells
+        .iter()
+        .filter(|(_, c)| c.terrain == Terrain::Floor)
+        .map(|(c, _)| c)
+        .choose(&mut rng)
+        .unwrap()
+}
+
 impl MapGenerator for CellularAutomata {
     fn generate_map(&self) -> Map {
-        let mut rng = thread_rng();
-
-        let mut cells = random_noise(
-            &mut rng,
-            Coordinate::new(0, 0).range_iter(self.radius as i32),
-        );
+        let mut cells = random_noise(Coordinate::new(0, 0).range_iter(self.radius as i32));
 
         self.process(&mut cells);
-
         surround_wall(&mut cells);
+
+        let player_start = choose_random(&cells);
 
         Map {
             cells,
-            player_start: Coordinate::new(0, 0),
-            goal: Coordinate::new(0, 0),
+            player_start,
+        }
+    }
+}
+
+pub struct DrunkardsWalk {
+    distance: usize,
+    limit: usize,
+}
+
+impl DrunkardsWalk {
+    pub fn example() -> DrunkardsWalk {
+        DrunkardsWalk {
+            distance: 40,
+            limit: 200,
+        }
+    }
+
+    fn gen_path(&self, start: Coordinate) -> impl Iterator<Item = Coordinate> {
+        let mut rng = thread_rng();
+        iterate(start, move |x| {
+            let dir = HexDirection::all().choose(&mut rng).unwrap();
+            *x + *dir
+        })
+        .take(self.distance)
+    }
+
+    fn carve_path(&self, start: Coordinate, map: &mut HashMap<Coordinate, MapCell>) {
+        let path = self.gen_path(start).map(|c| (c, MapCell::floor()));
+        map.extend(path);
+    }
+}
+
+impl MapGenerator for DrunkardsWalk {
+    fn generate_map(&self) -> Map {
+        let mut path_start = Coordinate::new(0, 0);
+
+        let mut cells = HashMap::<Coordinate, MapCell>::default();
+
+        loop {
+            self.carve_path(path_start, &mut cells);
+            if cells.len() > self.limit {
+                break;
+            }
+            path_start = choose_random(&cells);
+        }
+
+        surround_wall(&mut cells);
+
+        let player_start = choose_random(&cells);
+
+        Map {
+            cells,
+            player_start,
         }
     }
 }
