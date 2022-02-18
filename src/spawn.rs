@@ -54,7 +54,7 @@ pub fn spawn_map_entities(
             for (&c, cell) in map.cells.iter() {
                 let color = match cell.terrain {
                     Terrain::Floor => Color::OLIVE,
-                    Terrain::Impassable => Color::MIDNIGHT_BLUE,
+                    Terrain::Wall => Color::MIDNIGHT_BLUE,
                 };
                 let draw_mode = DrawMode::Outlined {
                     fill_mode: FillMode::color(color),

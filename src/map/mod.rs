@@ -16,10 +16,10 @@ impl Plugin for MapPlugin {
     }
 }
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Terrain {
     Floor,
-    Impassable,
+    Wall,
 }
 
 #[derive(Component)]
@@ -33,6 +33,7 @@ pub struct Map {
     pub goal: Coordinate,
 }
 
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub struct MapCell {
     pub terrain: Terrain,
     pub enemy: Option<HexDirection>,
@@ -104,7 +105,7 @@ fn surround_wall(map: &mut HashMap<Coordinate, MapCell>) {
         map.insert(
             *wall,
             MapCell {
-                terrain: Terrain::Impassable,
+                terrain: Terrain::Wall,
                 enemy: None,
             },
         );
@@ -123,7 +124,7 @@ fn random_noise<R: Rng>(
                     terrain: if rng.gen::<bool>() {
                         Terrain::Floor
                     } else {
-                        Terrain::Impassable
+                        Terrain::Wall
                     },
                     enemy: None,
                 },
@@ -132,13 +133,62 @@ fn random_noise<R: Rng>(
         .collect::<HashMap<_, _>>()
 }
 
-pub struct CellularAutomata;
+pub struct CellularAutomata {
+    radius: usize,
+    iterations: usize,
+    rule: fn(usize) -> Terrain,
+}
+
+impl CellularAutomata {
+    pub fn new(radius: usize, iterations: usize, rule: fn(usize) -> Terrain) -> CellularAutomata {
+        CellularAutomata {
+            radius,
+            iterations,
+            rule,
+        }
+    }
+
+    fn step(&self, cells: &mut HashMap<Coordinate, MapCell>) {
+        *cells = cells
+            .iter()
+            .map(|(&pos, &cell)| {
+                let neighbor_count = pos
+                    .neighbors()
+                    .iter()
+                    .map(|c| cells.get(&c))
+                    .flatten()
+                    .filter(|c| c.terrain == Terrain::Floor)
+                    .count();
+                (
+                    pos,
+                    MapCell {
+                        terrain: (self.rule)(neighbor_count),
+                        ..cell
+                    },
+                )
+            })
+            .collect();
+    }
+
+    fn process(&self, cells: &mut HashMap<Coordinate, MapCell>) {
+        for _ in 0..self.iterations {
+            self.step(cells);
+        }
+    }
+}
 
 impl MapGenerator for CellularAutomata {
     fn generate_map(&self) -> Map {
         let mut rng = thread_rng();
 
-        let cells = random_noise(&mut rng, Coordinate::new(0, 0).range_iter(5));
+        let mut cells = random_noise(
+            &mut rng,
+            Coordinate::new(0, 0).range_iter(self.radius as i32),
+        );
+
+        self.process(&mut cells);
+
+        surround_wall(&mut cells);
 
         Map {
             cells,
