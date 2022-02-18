@@ -8,9 +8,10 @@ use crate::animation::AnimatingState;
 use crate::domain::actions::rotate::RotateAction;
 use crate::domain::actions::step::StepAction;
 use crate::domain::actions::strike::StrikeAction;
+use crate::domain::common::*;
 use crate::domain::turn_queue::TurnQueue;
 use crate::turn_engine::actions::ActionQueue;
-use crate::{domain::common::*, Player};
+use crate::Player;
 
 pub struct AiPlugin;
 

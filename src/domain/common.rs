@@ -6,6 +6,7 @@ pub const HEX_SPACING: Spacing = Spacing::FlatTop(40.0);
 
 pub type HexDirection = hex2d::Direction;
 
+
 #[derive(Component, Debug)]
 pub struct Actor {
     pub actions_per_turn: u8,

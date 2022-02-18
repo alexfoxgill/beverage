@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use bevy_easings::EasingsPlugin;
-use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*, shapes::Circle};
+use bevy_prototype_lyon::prelude::*;
 use domain::turn_queue::{TurnQueue, TurnQueuePlugin};
 use hex2d::*;
 use wasm_bindgen::prelude::*;
@@ -12,14 +12,15 @@ pub mod component_index;
 pub mod domain;
 pub mod intention;
 pub mod map;
+pub mod spawn;
 pub mod turn_engine;
 
 use ai::*;
 use animation::*;
-use domain::common::*;
 use domain::*;
 use intention::*;
 use map::*;
+use spawn::*;
 use turn_engine::*;
 
 #[wasm_bindgen]
@@ -53,145 +54,21 @@ impl Plugin for GamePlugin {
                     .with_system(update_animating_state.after("run_animations")),
             )
             .add_system(bevy::input::system::exit_on_esc_system)
-            .add_startup_system(setup.after(SpawnMap));
+            .add_startup_system(setup);
     }
 }
 
+#[derive(Component)]
+pub struct Player;
 fn setup(mut commands: Commands, mut turn_queue: ResMut<TurnQueue>) {
     // cameras
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
     commands.spawn_bundle(UiCameraBundle::default());
 
-    // spawn player
-    let player = commands
-        .spawn_bundle(ActorBundle::new_player(Coordinate::new(0, 0)))
-        .with_children(|player| {
-            player.spawn_bundle(direction_indicator());
-        })
-        .id();
+    let map = SmallHex::generate_map();
 
-    turn_queue.enqueue(player);
+    spawn_map_entities(&mut commands, &mut turn_queue, &map);
 
     spawn_enemy(&mut commands, &mut turn_queue, Coordinate::new(2, 2));
     spawn_enemy(&mut commands, &mut turn_queue, Coordinate::new(-2, -2));
-}
-
-fn spawn_enemy(commands: &mut Commands, turn_queue: &mut TurnQueue, coordinate: Coordinate) {
-    let enemy = commands
-        .spawn_bundle(ActorBundle::new_enemy(coordinate))
-        .with_children(|parent| {
-            parent.spawn_bundle(direction_indicator());
-        })
-        .id();
-
-    turn_queue.enqueue(enemy);
-}
-
-fn direction_indicator() -> ShapeBundle {
-    GeometryBuilder::build_as(
-        &shapes::Polygon {
-            points: vec![
-                Vec2::new(-15.0, 30.0),
-                Vec2::new(0.0, 45.0),
-                Vec2::new(15.0, 30.0),
-            ],
-            closed: true,
-        },
-        DrawMode::Fill(FillMode::color(Color::YELLOW)),
-        Transform::default(),
-    )
-}
-
-#[derive(Bundle)]
-struct ActorBundle {
-    #[bundle]
-    shape: ShapeBundle,
-
-    facing: Facing,
-    pos: HexPos,
-    actor: Actor,
-}
-
-#[derive(Component)]
-pub struct Player;
-
-#[derive(Bundle)]
-struct PlayerBundle {
-    #[bundle]
-    actor: ActorBundle,
-
-    player: Player,
-}
-
-#[derive(Bundle)]
-struct AiBundle {
-    #[bundle]
-    actor: ActorBundle,
-
-    ai: AIBehaviour,
-}
-
-impl ActorBundle {
-    fn new_player(coord: Coordinate) -> PlayerBundle {
-        let facing = Facing::default();
-        let pos = HexPos(coord);
-        let shape = GeometryBuilder::build_as(
-            &Circle {
-                radius: 30.0,
-                center: Vec2::new(0.0, 0.0),
-            },
-            DrawMode::Outlined {
-                fill_mode: FillMode::color(Color::WHITE),
-                outline_mode: StrokeMode::new(Color::BLACK, 1.0),
-            },
-            Transform::default(),
-        );
-
-        let actor = Actor {
-            actions_per_turn: 2,
-            actions_remaining: 2,
-        };
-
-        PlayerBundle {
-            actor: ActorBundle {
-                facing,
-                pos,
-                shape,
-                actor,
-            },
-
-            player: Player,
-        }
-    }
-
-    fn new_enemy(coord: Coordinate) -> AiBundle {
-        let facing = Facing::default();
-        let pos = HexPos(coord);
-        let shape = GeometryBuilder::build_as(
-            &Circle {
-                radius: 30.0,
-                center: Vec2::new(0.0, 0.0),
-            },
-            DrawMode::Outlined {
-                fill_mode: FillMode::color(Color::RED),
-                outline_mode: StrokeMode::new(Color::BLACK, 1.0),
-            },
-            Transform::default(),
-        );
-
-        let actor = Actor {
-            actions_per_turn: 1,
-            actions_remaining: 1,
-        };
-
-        AiBundle {
-            actor: ActorBundle {
-                facing,
-                pos,
-                shape,
-                actor,
-            },
-            ai: AIBehaviour::Wandering,
-        }
-    }
 }
