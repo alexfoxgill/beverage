@@ -8,7 +8,10 @@ use rand::prelude::*;
 
 mod hex_map;
 
-use crate::domain::common::{HexPos, HEX_SPACING};
+use crate::{
+    component_index::ComponentIndex,
+    domain::common::{HexPos, HEX_SPACING},
+};
 
 use hex_map::HexMap;
 
@@ -16,7 +19,8 @@ pub struct MapPlugin;
 
 impl Plugin for MapPlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_system(spawn_map.label(SpawnMap));
+        app.add_plugin(ComponentIndex::<HexPos>::plugin())
+            .add_startup_system(spawn_map.label(SpawnMap));
     }
 }
 

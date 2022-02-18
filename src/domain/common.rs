@@ -32,7 +32,7 @@ impl Default for Facing {
     }
 }
 
-#[derive(Component)]
+#[derive(Component, PartialEq, Eq, Clone, Hash)]
 pub struct HexPos(pub Coordinate);
 
 impl HexPos {

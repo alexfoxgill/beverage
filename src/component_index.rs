@@ -1,4 +1,5 @@
 use std::hash::Hash;
+use std::marker::PhantomData;
 
 use bevy::prelude::*;
 
@@ -45,6 +46,12 @@ impl<C: Component + Clone + Eq + Hash> ComponentIndex<C> {
     pub fn get_entities(&self, component: &C) -> Option<&HashSet<Entity>> {
         self.component_to_entities.get(component)
     }
+
+    pub fn plugin() -> ComponentIndexPlugin<C> {
+        ComponentIndexPlugin {
+            phantom: PhantomData,
+        }
+    }
 }
 
 pub fn index_changed<C: Component + Clone + Eq + Hash>(
@@ -61,7 +68,11 @@ pub fn index_changed<C: Component + Clone + Eq + Hash>(
     }
 }
 
-impl<C: Component + Clone + Eq + Hash> Plugin for ComponentIndex<C> {
+pub struct ComponentIndexPlugin<C: Component + Clone + Eq + Hash> {
+    phantom: PhantomData<C>,
+}
+
+impl<C: Component + Clone + Eq + Hash> Plugin for ComponentIndexPlugin<C> {
     fn build(&self, app: &mut App) {
         app.init_resource::<ComponentIndex<C>>()
             .add_system_to_stage(CoreStage::PostUpdate, index_changed::<C>);
