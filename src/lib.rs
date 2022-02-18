@@ -7,6 +7,7 @@ use wasm_bindgen::prelude::*;
 
 pub mod ai;
 pub mod animation;
+pub mod camera;
 pub mod component_index;
 pub mod domain;
 pub mod intention;
@@ -16,6 +17,7 @@ pub mod turn_engine;
 
 use ai::*;
 use animation::*;
+use camera::*;
 use domain::*;
 use intention::*;
 use map::*;
@@ -39,6 +41,7 @@ impl Plugin for GamePlugin {
         app.insert_resource(Msaa { samples: 4 })
             .insert_resource(ClearColor(Color::rgb(0.9, 0.9, 0.9)))
             .add_state(AnimatingState::Still)
+            .add_plugin(CameraPlugin)
             .add_plugin(MapPlugin)
             .add_plugin(TurnEnginePlugin)
             .add_plugin(TurnQueuePlugin)
@@ -58,9 +61,6 @@ impl Plugin for GamePlugin {
 }
 
 fn setup(mut commands: Commands, mut turn_queue: ResMut<TurnQueue>) {
-    // cameras
-    commands.spawn_bundle(OrthographicCameraBundle::new_2d());
-    commands.spawn_bundle(UiCameraBundle::default());
 
     let map = DrunkardsWalk::example().generate_map();
 
