@@ -134,14 +134,14 @@ impl Stage for TurnExecutorLoop {
     fn run(&mut self, world: &mut World) {
         world.resource_scope(|world, mut systems: Mut<TurnSystems>| 'actions: loop {
             let mut action_queue = world.get_resource_mut::<ActionQueue>().unwrap();
-            if let Some(action) = action_queue.0.pop_front() {
+            if let Some(action) = action_queue.pop() {
                 let new_effects = systems.run_action_system(action, world);
                 let mut effect_queue = world.get_resource_mut::<EffectQueue>().unwrap();
                 effect_queue.append(new_effects);
 
                 'effects: loop {
                     let mut effect_queue = world.get_resource_mut::<EffectQueue>().unwrap();
-                    if let Some(effect) = effect_queue.0.pop_front() {
+                    if let Some(effect) = effect_queue.pop() {
                         systems.run_effect_system(effect, world);
                     } else {
                         break 'effects;

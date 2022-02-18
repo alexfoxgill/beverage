@@ -1,15 +1,11 @@
 use std::iter;
 
-use bevy::prelude::*;
+use bevy::{prelude::*, utils::HashMap};
 
 use hex2d::{Direction as HexDirection, *};
 use rand::prelude::*;
 
-mod hex_map;
-
 use crate::{component_index::ComponentIndex, domain::common::HexPos};
-
-use hex_map::HexMap;
 
 pub struct MapPlugin;
 
@@ -38,14 +34,14 @@ impl Terrain {
 }
 
 pub struct Map {
-    pub cells: HexMap<MapCell>,
+    pub cells: HashMap<Coordinate, MapCell>,
     pub player_start: Coordinate,
     pub goal: Coordinate,
 }
 
 pub struct MapCell {
     pub terrain: Terrain,
-    pub enemy: Option<HexDirection>
+    pub enemy: Option<HexDirection>,
 }
 
 pub trait MapGenerator {
@@ -65,11 +61,18 @@ impl MapGenerator for SmallHex {
                     x,
                     MapCell {
                         terrain: Terrain::random(),
-                        enemy: None
+                        enemy: None,
                     },
                 )
             });
-        let cells = HexMap::from_iter(tiles);
+        let mut cells = HashMap::from_iter(tiles);
+
+        if let Some(cell) = cells.get_mut(&Coordinate::new(-2, -2)) {
+            cell.enemy = Some(HexDirection::YZ);
+        }
+        if let Some(cell) = cells.get_mut(&Coordinate::new(2, 2)) {
+            cell.enemy = Some(HexDirection::ZY);
+        }
 
         Map {
             cells,

@@ -3,7 +3,6 @@ use bevy::prelude::*;
 use bevy_easings::EasingsPlugin;
 use bevy_prototype_lyon::prelude::*;
 use domain::turn_queue::{TurnQueue, TurnQueuePlugin};
-use hex2d::*;
 use wasm_bindgen::prelude::*;
 
 pub mod ai;
@@ -68,7 +67,4 @@ fn setup(mut commands: Commands, mut turn_queue: ResMut<TurnQueue>) {
     let map = SmallHex::generate_map();
 
     spawn_map_entities(&mut commands, &mut turn_queue, &map);
-
-    spawn_enemy(&mut commands, &mut turn_queue, Coordinate::new(2, 2));
-    spawn_enemy(&mut commands, &mut turn_queue, Coordinate::new(-2, -2));
 }

@@ -30,7 +30,7 @@ impl InnerType for AnyAction {
 }
 
 #[derive(Default)]
-pub struct ActionQueue(pub VecDeque<AnyAction>);
+pub struct ActionQueue(VecDeque<AnyAction>);
 
 impl<A: Action + 'static, const N: usize> From<[A; N]> for ActionQueue {
     fn from(arr: [A; N]) -> Self {

@@ -31,7 +31,7 @@ impl InnerType for AnyEffect {
 }
 
 #[derive(Default)]
-pub struct EffectQueue(pub VecDeque<AnyEffect>);
+pub struct EffectQueue(VecDeque<AnyEffect>);
 
 impl<E, const N: usize> From<[E; N]> for EffectQueue
 where

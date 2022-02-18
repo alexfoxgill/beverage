@@ -76,6 +76,12 @@ pub fn spawn_map_entities(
 
     spawn_player(commands, turn_queue, map.player_start);
 
+    for (&c, cell) in map.cells.iter() {
+        if let Some(dir) = cell.enemy {
+            spawn_enemy(commands, turn_queue, c, dir);
+        }
+    }
+
     map_entity
 }
 
@@ -132,9 +138,10 @@ pub fn spawn_enemy(
     commands: &mut Commands,
     turn_queue: &mut TurnQueue,
     coordinate: Coordinate,
+    direction: HexDirection,
 ) -> Entity {
     let enemy = commands
-        .spawn_bundle(new_enemy(coordinate))
+        .spawn_bundle(new_enemy(coordinate, direction))
         .with_children(|parent| {
             parent.spawn_bundle(direction_indicator());
         })
@@ -160,8 +167,8 @@ fn direction_indicator() -> ShapeBundle {
     )
 }
 
-fn new_enemy(coord: Coordinate) -> AiBundle {
-    let facing = Facing::default();
+fn new_enemy(coord: Coordinate, direction: HexDirection) -> AiBundle {
+    let facing = Facing(direction);
     let pos = HexPos(coord);
     let shape = GeometryBuilder::build_as(
         &Circle {
