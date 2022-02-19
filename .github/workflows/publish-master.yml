@@ -39,7 +39,7 @@ jobs:
           API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
         with:
           destination_repo: alexfoxgill/alexfoxgill.github.io
-          source_file: pkg/.
+          source_file: pkg/
           destination_folder: demo
           user_email: email@alexfoxgill.com
           user_name: alexfoxgill
