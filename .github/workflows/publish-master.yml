@@ -7,15 +7,28 @@ jobs:
     runs-on: ubuntu-latest
     name: Build and Publish
     steps:
-      - run: echo "Job triggered"
+      - name: Checkout repo
+        uses: actions/checkout@v2
 
-      - uses: actions/checkout@v2
-        name: Checkout repo
-
-      - uses: jetli/wasm-pack-action@v0.3.0
-        name: Install wasm-pack
+      - name: Install wasm-pack
+        uses: jetli/wasm-pack-action@v0.3.0
         with:
           version: 'latest'
 
-      - run: wasm-pack build --target web --release
-        name: Run wasm-pack
+      - name: Run wasm-pack
+        run: wasm-pack build --target web --release
+
+      - name: List files in /pkg
+        run: |
+          ls ${{ github.workspace }}/pkg
+        
+      - name: Copy pkg and index.html to alexfoxgill.github.io
+        uses: dmnemec/copy_file_to_another_repo_action@main
+        env:
+          API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
+        with:
+          destination_repo: alexfoxgill/alexfoxgill.github.io
+          source_file: {./pkg/*,./index.html}
+          destination_folder: test
+          user_email: email@alexfoxgill.com
+          user_name: alexfoxgill
