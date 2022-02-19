@@ -28,7 +28,7 @@ jobs:
           API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
         with:
           destination_repo: alexfoxgill/alexfoxgill.github.io
-          source_file: {./pkg/*,./index.html}
+          source_file: '{./pkg/*,./index.html}'
           destination_folder: test
           user_email: email@alexfoxgill.com
           user_name: alexfoxgill
