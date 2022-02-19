@@ -1,0 +1,21 @@
+name: GitHub Actions Demo
+on:
+  push:
+    branches: [ master ]
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    name: Build and Publish
+    steps:
+      - run: echo "Job triggered"
+
+      - uses: actions/checkout@v2
+        name: Checkout repo
+
+      - uses: jetli/wasm-pack-action@v0.3.0
+        name: Install wasm-pack
+        with:
+          version: 'latest'
+
+      - run: wasm-pack build --target web --release
+        name: Run wasm-pack
