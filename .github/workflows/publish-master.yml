@@ -1,4 +1,4 @@
-name: GitHub Actions Demo
+name: Build & Publish
 on:
   push:
     branches: [ master ]
