@@ -77,7 +77,7 @@ pub fn spawn_map_entities(
         })
         .id();
 
-    spawn_player(commands, turn_queue, map.player_start);
+    let player = spawn_player(commands, turn_queue, map.player_start);
 
     for c in map
         .cells
@@ -86,7 +86,7 @@ pub fn spawn_map_entities(
         .map(|(c, _)| c)
         .choose_multiple(&mut thread_rng(), 3)
     {
-        spawn_enemy(commands, turn_queue, *c);
+        spawn_enemy(commands, turn_queue, *c, AIBehaviour::Chasing(player));
     }
 
     map_entity
@@ -146,9 +146,10 @@ pub fn spawn_enemy(
     commands: &mut Commands,
     turn_queue: &mut TurnQueue,
     coordinate: Coordinate,
+    ai: AIBehaviour,
 ) -> Entity {
     let enemy = commands
-        .spawn_bundle(new_enemy(coordinate))
+        .spawn_bundle(new_enemy(coordinate, ai))
         .with_children(|parent| {
             parent.spawn_bundle(direction_indicator());
         })
@@ -174,7 +175,7 @@ fn direction_indicator() -> ShapeBundle {
     )
 }
 
-fn new_enemy(coord: Coordinate) -> AiBundle {
+fn new_enemy(coord: Coordinate, ai: AIBehaviour) -> AiBundle {
     let direction = HexDirection::all().choose(&mut thread_rng()).unwrap();
     let facing = Facing(*direction);
     let pos = HexPos(coord);
@@ -202,6 +203,6 @@ fn new_enemy(coord: Coordinate) -> AiBundle {
             shape,
             actor,
         },
-        ai: AIBehaviour::Wandering,
+        ai,
     }
 }

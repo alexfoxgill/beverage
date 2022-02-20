@@ -78,6 +78,6 @@ fn process_intention(
             Intention::Backstep => ev_action.push(BackstepAction::new(*entity)),
             Intention::EndTurn => ev_action.push(EndTurnAction::new(*entity)),
             Intention::Strike => ev_action.push(StrikeAction::new(*entity)),
-        }
+        };
     }
 }

@@ -8,9 +8,10 @@ use crate::animation::AnimatingState;
 use crate::domain::actions::end_turn::EndTurnAction;
 use crate::domain::actions::rotate::RotateAction;
 use crate::domain::actions::step::StepAction;
-use crate::domain::actions::strike::StrikeAction;
 use crate::domain::common::*;
 use crate::domain::turn_queue::TurnQueue;
+use crate::map::{MapTile, Terrain};
+use crate::pathfinding::{a_star, Move};
 use crate::turn_engine::actions::ActionQueue;
 use crate::Player;
 
@@ -41,6 +42,7 @@ fn field_of_view(pos: Coordinate, facing: HexDirection) -> impl Iterator<Item = 
 pub fn generate_ai_actions(
     mut ai: Query<(&HexPos, &Facing, &Actor, &mut AIBehaviour)>,
     targets: Query<(&HexPos, Entity), With<Player>>,
+    map: Query<(&HexPos, &MapTile)>,
     turn_queue: Res<TurnQueue>,
     mut actions: ResMut<ActionQueue>,
 ) {
@@ -74,19 +76,38 @@ pub fn generate_ai_actions(
                     }
                     AIBehaviour::Chasing(e) => {
                         if let Ok((&HexPos(target_pos), _)) = targets.get(e) {
-                            if let Some(dir) = pos.direction_to_cw(target_pos) {
-                                let turn = direction_diff(facing, dir);
-                                match turn {
-                                    Forward => {
-                                        if pos.distance(target_pos) == 1 {
-                                            actions.push(StrikeAction::new(entity))
-                                        } else {
-                                            actions.push(StepAction::new(entity))
-                                        }
+                            let start = hex2d::Position::new(pos, facing);
+                            let valid_tiles = map
+                                .iter()
+                                .filter_map(|(x, t)| {
+                                    if t.terrain == Terrain::Floor {
+                                        Some(x.0)
+                                    } else {
+                                        None
                                     }
-                                    x => {
-                                        actions.push(RotateAction::new(entity, x));
-                                        actions.push(StepAction::new(entity))
+                                })
+                                .collect();
+                            let path = a_star(start, target_pos, valid_tiles);
+
+                            if let Some(mut path) = path {
+                                let mut cost = 0;
+                                while cost < actor.actions_remaining {
+                                    if let Some(next) = path.pop() {
+                                        match next {
+                                            Move::TurnLeft => {
+                                                cost += actions
+                                                    .push(RotateAction::new(entity, Angle::Left))
+                                            }
+                                            Move::TurnRight => {
+                                                cost += actions
+                                                    .push(RotateAction::new(entity, Angle::Right))
+                                            }
+                                            Move::StepForward => {
+                                                cost += actions.push(StepAction::new(entity))
+                                            }
+                                        }
+                                    } else {
+                                        break;
                                     }
                                 }
                                 actions.push(EndTurnAction::new(entity));

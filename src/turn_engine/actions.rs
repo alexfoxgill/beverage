@@ -13,6 +13,12 @@ impl_downcast!(Action);
 #[derive(Debug)]
 pub struct AnyAction(pub Box<dyn Action>);
 
+impl AnyAction {
+    pub fn cost(&self) -> u8 {
+        self.0.cost()
+    }
+}
+
 impl<A: Action> From<A> for AnyAction {
     fn from(action: A) -> Self {
         AnyAction(Box::new(action))
@@ -42,16 +48,16 @@ impl<A: Action + 'static, const N: usize> From<[A; N]> for ActionQueue {
     }
 }
 
-impl<A: Into<AnyAction>> Extend<A> for ActionQueue {
+impl<A: Action + Into<AnyAction>> Extend<A> for ActionQueue {
     fn extend<T: IntoIterator<Item = A>>(&mut self, iter: T) {
         for x in iter {
-            self.push(x)
+            self.push(x);
         }
     }
 }
 
 impl ActionQueue {
-    pub fn new<A: Into<AnyAction>>(action: A) -> ActionQueue {
+    pub fn new<A: Action + Into<AnyAction>>(action: A) -> ActionQueue {
         let mut queue = ActionQueue::default();
         queue.push(action);
         queue
@@ -61,7 +67,9 @@ impl ActionQueue {
         self.0.pop_front()
     }
 
-    pub fn push<A: Into<AnyAction>>(&mut self, action: A) {
+    pub fn push<A: Action + Into<AnyAction>>(&mut self, action: A) -> u8 {
+        let cost = action.cost();
         self.0.push_back(action.into());
+        cost
     }
 }
