@@ -7,17 +7,10 @@ use crate::turn_engine::effects::{Effect, EffectQueue};
 use super::end_turn::EndTurnEffect;
 
 #[derive(Debug)]
-pub struct EnergyCostEffect(Entity, ActionCost);
-
-#[derive(Debug, Clone)]
-pub enum ActionCost {
-    All,
-    Fixed(u8),
-    None,
-}
+pub struct EnergyCostEffect(Entity, u8);
 
 impl EnergyCostEffect {
-    pub fn new(entity: Entity, cost: ActionCost) -> EnergyCostEffect {
+    pub fn new(entity: Entity, cost: u8) -> EnergyCostEffect {
         EnergyCostEffect(entity, cost)
     }
 }
@@ -30,18 +23,10 @@ pub fn handler(
     mut effects: ResMut<EffectQueue>,
 ) {
     if let Ok(mut actor) = actors.get_mut(entity) {
-        match cost {
-            ActionCost::All => {
-                actor.actions_remaining = 0;
-            }
-            ActionCost::Fixed(cost) => {
-                actor.actions_remaining = if cost < actor.actions_remaining {
-                    actor.actions_remaining - cost
-                } else {
-                    0
-                };
-            }
-            ActionCost::None => (),
+        if cost > actor.actions_remaining {
+            actor.actions_remaining = 0;
+        } else {
+            actor.actions_remaining -= cost;
         }
 
         if actor.actions_remaining == 0 {

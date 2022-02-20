@@ -5,7 +5,9 @@ use downcast_rs::*;
 
 use super::{DynamicWrapper, InnerType};
 
-pub trait Action: Downcast + Send + Sync + std::fmt::Debug {}
+pub trait Action: Downcast + Send + Sync + std::fmt::Debug {
+    fn cost(&self) -> u8;
+}
 impl_downcast!(Action);
 
 #[derive(Debug)]

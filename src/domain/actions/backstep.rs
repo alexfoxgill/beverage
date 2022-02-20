@@ -1,9 +1,6 @@
 use crate::{
     domain::common::*,
-    domain::effects::{
-        energy_cost::{ActionCost, EnergyCostEffect},
-        move_entity::MoveEffect,
-    },
+    domain::effects::{energy_cost::EnergyCostEffect, move_entity::MoveEffect},
     map::{MapTile, Terrain},
     turn_engine::{
         actions::{Action, ActionQueue},
@@ -20,20 +17,25 @@ impl BackstepAction {
         BackstepAction(entity)
     }
 }
-impl Action for BackstepAction {}
+impl Action for BackstepAction {
+    fn cost(&self) -> u8 {
+        2
+    }
+}
 
 pub fn generator(In(e): In<Entity>) -> ActionQueue {
     ActionQueue::new(BackstepAction(e))
 }
 
 pub fn handler(
-    In(BackstepAction(entity)): In<BackstepAction>,
+    In(action): In<BackstepAction>,
     actor: Query<(&Actor, &HexPos, &Facing)>,
     occupied: Query<&HexPos, With<Actor>>,
     map_tiles: Query<(&HexPos, &MapTile)>,
 ) -> EffectQueue {
+    let entity = action.0;
+    let cost = action.cost();
     if let Ok((actor, pos, facing)) = actor.get(entity) {
-        let cost = 2;
         let to = pos.get_facing(-facing.0);
         if actor.actions_remaining < cost {
             return Default::default();
@@ -45,7 +47,7 @@ pub fn handler(
             .iter()
             .any(|(x, tile)| x.0 == to && tile.terrain == Terrain::Floor)
         {
-            return EffectQueue::new(EnergyCostEffect::new(entity, ActionCost::Fixed(cost)))
+            return EffectQueue::new(EnergyCostEffect::new(entity, cost))
                 .with(MoveEffect::new(entity, to));
         }
     }

@@ -16,7 +16,11 @@ impl EndTurnAction {
     }
 }
 
-impl Action for EndTurnAction {}
+impl Action for EndTurnAction {
+    fn cost(&self) -> u8 {
+        0
+    }
+}
 
 pub fn generator(In(e): In<Entity>) -> ActionQueue {
     ActionQueue::new(EndTurnAction::new(e))

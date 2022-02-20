@@ -21,7 +21,11 @@ impl RotateAction {
     }
 }
 
-impl Action for RotateAction {}
+impl Action for RotateAction {
+    fn cost(&self) -> u8 {
+        0
+    }
+}
 
 pub fn generator(In(e): In<Entity>) -> ActionQueue {
     ActionQueue::from([
