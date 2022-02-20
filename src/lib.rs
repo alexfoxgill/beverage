@@ -12,6 +12,7 @@ pub mod component_index;
 pub mod domain;
 pub mod intention;
 pub mod map;
+pub mod pathfinding;
 pub mod spawn;
 pub mod turn_engine;
 
@@ -39,7 +40,7 @@ pub struct GamePlugin;
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(Msaa { samples: 4 })
-            .insert_resource(ClearColor(Color::rgb(0.9, 0.9, 0.9)))
+            .insert_resource(ClearColor(Color::rgb(0.3, 0.3, 0.4)))
             .add_state(AnimatingState::Still)
             .add_plugin(CameraPlugin)
             .add_plugin(MapPlugin)
@@ -48,20 +49,13 @@ impl Plugin for GamePlugin {
             .add_plugin(DomainPlugin)
             .add_plugin(AiPlugin)
             .add_plugin(IntentionPlugin)
-            .add_stage_after(
-                TurnExecution,
-                "blah",
-                SystemStage::parallel()
-                    .with_system(animate_movement.label("run_animations"))
-                    .with_system(update_animating_state.after("run_animations")),
-            )
+            .add_plugin(AnimationPlugin)
             .add_system(bevy::input::system::exit_on_esc_system)
             .add_startup_system(setup);
     }
 }
 
 fn setup(mut commands: Commands, mut turn_queue: ResMut<TurnQueue>) {
-
     let map = DrunkardsWalk::example().generate_map();
 
     spawn_map_entities(&mut commands, &mut turn_queue, &map);
