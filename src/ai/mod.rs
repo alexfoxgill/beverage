@@ -5,6 +5,7 @@ use itertools::*;
 use rand::prelude::*;
 
 use crate::animation::AnimatingState;
+use crate::domain::actions::end_turn::EndTurnAction;
 use crate::domain::actions::rotate::RotateAction;
 use crate::domain::actions::step::StepAction;
 use crate::domain::actions::strike::StrikeAction;
@@ -68,6 +69,7 @@ pub fn generate_ai_actions(
 
                             actions.push(RotateAction::new(entity, rotation));
                             actions.push(StepAction::new(entity));
+                            actions.push(EndTurnAction::new(entity));
                         }
                     }
                     AIBehaviour::Chasing(e) => {
@@ -82,8 +84,12 @@ pub fn generate_ai_actions(
                                             actions.push(StepAction::new(entity))
                                         }
                                     }
-                                    x => actions.push(RotateAction::new(entity, x)),
+                                    x => {
+                                        actions.push(RotateAction::new(entity, x));
+                                        actions.push(StepAction::new(entity))
+                                    }
                                 }
+                                actions.push(EndTurnAction::new(entity));
                             } else {
                                 *behaviour = AIBehaviour::Wandering
                             }
