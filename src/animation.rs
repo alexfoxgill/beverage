@@ -31,7 +31,7 @@ pub fn animate_movement(
             .entity(e)
             .insert(transform.ease_to(
                 new_transform,
-                EaseFunction::QuarticIn,
+                EaseFunction::QuadraticInOut,
                 EasingType::Once { duration },
             ))
             .insert(Animating(Timer::new(duration, false)));
