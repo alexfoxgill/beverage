@@ -21,17 +21,6 @@ jobs:
       - name: List files in /pkg
         run: |
           ls ${{ github.workspace }}/pkg
-
-      - name: Copy index.html to alexfoxgil.github.io
-        uses: dmnemec/copy_file_to_another_repo_action@main
-        env:
-          API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
-        with:
-          destination_repo: alexfoxgill/alexfoxgill.github.io
-          source_file: ${{ github.workspace }}/index.html
-          destination_folder: demo
-          user_email: email@alexfoxgill.com
-          user_name: alexfoxgill
         
       - name: Copy pkg to alexfoxgill.github.io
         uses: dmnemec/copy_file_to_another_repo_action@main
@@ -40,6 +29,17 @@ jobs:
         with:
           destination_repo: alexfoxgill/alexfoxgill.github.io
           source_file: ${{ github.workspace }}/pkg/
+          destination_folder: demo
+          user_email: email@alexfoxgill.com
+          user_name: alexfoxgill
+
+      - name: Copy index.html to alexfoxgil.github.io
+        uses: dmnemec/copy_file_to_another_repo_action@main
+        env:
+          API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
+        with:
+          destination_repo: alexfoxgill/alexfoxgill.github.io
+          source_file: ${{ github.workspace }}/index.html
           destination_folder: demo
           user_email: email@alexfoxgill.com
           user_name: alexfoxgill
