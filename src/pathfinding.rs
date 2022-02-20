@@ -1,3 +1,5 @@
+use std::collections::VecDeque;
+
 use bevy::utils::{HashMap, HashSet};
 use hex2d::{Angle, Coordinate, Position};
 
@@ -26,12 +28,15 @@ impl Move {
     }
 }
 
-fn retrace(steps: &mut HashMap<Position, (Position, Move)>, mut current: Position) -> Vec<Move> {
-    let mut path = Vec::default();
+fn retrace(
+    steps: &mut HashMap<Position, (Position, Move)>,
+    mut current: Position,
+) -> VecDeque<Move> {
+    let mut path = VecDeque::default();
     loop {
         if let Some((pos, mov)) = steps.remove(&current) {
             current = pos;
-            path.push(mov);
+            path.push_front(mov);
         } else {
             break;
         }
@@ -41,11 +46,11 @@ fn retrace(steps: &mut HashMap<Position, (Position, Move)>, mut current: Positio
 
 const MOVES: [Move; 3] = [Move::TurnLeft, Move::TurnRight, Move::StepForward];
 
-pub fn a_star(
+pub fn a_star<F: Fn(&Coordinate) -> bool>(
     start: Position,
     goal: Coordinate,
-    valid_tiles: HashSet<Coordinate>,
-) -> Option<Vec<Move>> {
+    is_valid: F,
+) -> Option<VecDeque<Move>> {
     // set of discovered nodes which need to be expanded
     let mut to_search = HashSet::default();
     to_search.insert(start);
@@ -76,7 +81,7 @@ pub fn a_star(
 
         for mov in MOVES {
             let next_pos = mov.apply(current);
-            if !valid_tiles.contains(&next_pos.coord) {
+            if !is_valid(&next_pos.coord) {
                 continue;
             }
 

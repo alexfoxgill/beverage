@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 
+use bevy::utils::HashSet;
 use hex2d::*;
 use itertools::*;
 use rand::prelude::*;
@@ -31,10 +32,6 @@ pub enum AIBehaviour {
     Chasing(Entity),
 }
 
-fn direction_diff(from: HexDirection, to: HexDirection) -> Angle {
-    *Angle::all().iter().find(|&&a| from + a == to).unwrap()
-}
-
 fn field_of_view(pos: Coordinate, facing: HexDirection) -> impl Iterator<Item = Coordinate> {
     iterate(pos, move |&x| x + facing)
 }
@@ -48,78 +45,99 @@ pub fn generate_ai_actions(
 ) {
     if let Some(&entity) = turn_queue.head() {
         if let Ok((&HexPos(pos), &Facing(facing), actor, mut behaviour)) = ai.get_mut(entity) {
-            if actor.actions_remaining > 0 {
-                match *behaviour {
-                    AIBehaviour::Wandering => {
-                        let target = targets.iter().find_map(|(HexPos(target_pos), target)| {
-                            if field_of_view(pos, facing)
-                                .take(10)
-                                .any(|x| &x == target_pos)
-                            {
-                                Some(target)
-                            } else {
-                                None
-                            }
-                        });
+            if actor.actions_remaining == 0 {
+                return;
+            }
 
-                        if let Some(target) = target {
-                            println!("{entity:?} is now chasing {target:?}");
-                            *behaviour = AIBehaviour::Chasing(target)
-                        } else {
-                            let rotation =
-                                Angle::from_int::<i32>(rand::thread_rng().gen_range(1..=6));
-
-                            actions.push(RotateAction::new(entity, rotation));
-                            actions.push(StepAction::new(entity));
-                            actions.push(EndTurnAction::new(entity));
-                        }
-                    }
-                    AIBehaviour::Chasing(e) => {
-                        if let Ok((&HexPos(target_pos), _)) = targets.get(e) {
-                            let start = hex2d::Position::new(pos, facing);
-                            let valid_tiles = map
-                                .iter()
-                                .filter_map(|(x, t)| {
-                                    if t.terrain == Terrain::Floor {
-                                        Some(x.0)
-                                    } else {
-                                        None
-                                    }
-                                })
-                                .collect();
-                            let path = a_star(start, target_pos, valid_tiles);
-
-                            if let Some(mut path) = path {
-                                let mut cost = 0;
-                                while cost < actor.actions_remaining {
-                                    if let Some(next) = path.pop() {
-                                        match next {
-                                            Move::TurnLeft => {
-                                                cost += actions
-                                                    .push(RotateAction::new(entity, Angle::Left))
-                                            }
-                                            Move::TurnRight => {
-                                                cost += actions
-                                                    .push(RotateAction::new(entity, Angle::Right))
-                                            }
-                                            Move::StepForward => {
-                                                cost += actions.push(StepAction::new(entity))
-                                            }
-                                        }
-                                    } else {
-                                        break;
-                                    }
-                                }
-                                actions.push(EndTurnAction::new(entity));
-                            } else {
-                                *behaviour = AIBehaviour::Wandering
-                            }
-                        } else {
-                            *behaviour = AIBehaviour::Wandering
-                        }
-                    }
+            let position = hex2d::Position::new(pos, facing);
+            match *behaviour {
+                AIBehaviour::Wandering => {
+                    wander(position, &targets, &mut behaviour, &mut actions, entity);
+                }
+                AIBehaviour::Chasing(target) => {
+                    chase(
+                        position, targets, target, map, actor, actions, entity, behaviour,
+                    );
                 }
             }
         }
+    }
+}
+
+fn wander(
+    position: hex2d::Position,
+    targets: &Query<(&HexPos, Entity), With<Player>>,
+    behaviour: &mut Mut<AIBehaviour>,
+    actions: &mut ResMut<ActionQueue>,
+    entity: Entity,
+) {
+    let target = targets.iter().find_map(|(HexPos(target_pos), target)| {
+        if field_of_view(position.coord, position.dir)
+            .take(10)
+            .any(|x| &x == target_pos)
+        {
+            Some(target)
+        } else {
+            None
+        }
+    });
+    if let Some(target) = target {
+        **behaviour = AIBehaviour::Chasing(target)
+    } else {
+        let rotation = Angle::from_int::<i32>(rand::thread_rng().gen_range(1..=6));
+
+        actions.push(RotateAction::new(entity, rotation));
+        actions.push(StepAction::new(entity));
+        actions.push(EndTurnAction::new(entity));
+    }
+}
+
+fn chase(
+    start: hex2d::Position,
+    targets: Query<(&HexPos, Entity), With<Player>>,
+    target: Entity,
+    map: Query<(&HexPos, &MapTile)>,
+    actor: &Actor,
+    mut actions: ResMut<ActionQueue>,
+    entity: Entity,
+    mut behaviour: Mut<AIBehaviour>,
+) {
+    if let Ok((&HexPos(target_pos), _)) = targets.get(target) {
+        let valid_tiles: HashSet<Coordinate> = map
+            .iter()
+            .filter_map(|(x, t)| {
+                if t.terrain == Terrain::Floor {
+                    Some(x.0)
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+        if let Some(mut path) = a_star(start, target_pos, |x| valid_tiles.contains(x)) {
+            let mut cost = 0;
+            while cost < actor.actions_remaining {
+                if let Some(next) = path.pop_front() {
+                    match next {
+                        Move::TurnLeft => {
+                            cost += actions.push(RotateAction::new(entity, Angle::Left));
+                        }
+                        Move::TurnRight => {
+                            cost += actions.push(RotateAction::new(entity, Angle::Right));
+                        }
+                        Move::StepForward => {
+                            cost += actions.push(StepAction::new(entity));
+                        }
+                    }
+                } else {
+                    break;
+                }
+            }
+            actions.push(EndTurnAction::new(entity));
+        } else {
+            *behaviour = AIBehaviour::Wandering
+        }
+    } else {
+        *behaviour = AIBehaviour::Wandering
     }
 }

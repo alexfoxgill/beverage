@@ -77,7 +77,7 @@ pub fn spawn_map_entities(
         })
         .id();
 
-    let player = spawn_player(commands, turn_queue, map.player_start);
+    spawn_player(commands, turn_queue, map.player_start);
 
     for c in map
         .cells
@@ -86,7 +86,7 @@ pub fn spawn_map_entities(
         .map(|(c, _)| c)
         .choose_multiple(&mut thread_rng(), 3)
     {
-        spawn_enemy(commands, turn_queue, *c, AIBehaviour::Chasing(player));
+        spawn_enemy(commands, turn_queue, *c, AIBehaviour::Wandering);
     }
 
     map_entity
