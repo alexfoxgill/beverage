@@ -1,7 +1,7 @@
 name: Build & Publish
 on:
   push:
-    branches: [ master ]
+    branches: [ master, main ]
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -30,7 +30,7 @@ jobs:
           API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
         with:
           destination_repo: alexfoxgill/alexfoxgill.github.io
-          source_file: ${{ github.workspace }}/pkg/
+          source_file: ${{ github.workspace }}/pkg/.
           destination_folder: demo
           user_email: email@alexfoxgill.com
           user_name: alexfoxgill
