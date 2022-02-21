@@ -120,7 +120,7 @@ fn new_player(coord: Coordinate) -> PlayerBundle {
             center: Vec2::new(0.0, 0.0),
         },
         DrawMode::Outlined {
-            fill_mode: FillMode::color(Color::WHITE),
+            fill_mode: FillMode::color(Color::rgba(1.0, 1.0, 1.0, 0.1)),
             outline_mode: StrokeMode::new(Color::BLACK, 1.0),
         },
         Transform::default(),

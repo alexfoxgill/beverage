@@ -39,7 +39,7 @@ pub fn animate_movement(
             .with_translation(new_translation)
             .with_rotation(new_rotation);
 
-        let duration = Duration::from_millis(100);
+        let duration = Duration::from_millis(250);
 
         commands
             .entity(e)

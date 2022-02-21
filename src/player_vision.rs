@@ -15,11 +15,24 @@ impl Plugin for PlayerVisionPlugin {
 
 fn update_visibility(
     player: Query<(&HexPos, &Facing, &Vision), With<Player>>,
-    mut viewable_things: Query<(&HexPos, &mut Visibility)>,
+    positioned: Query<(&HexPos, Entity, Option<&Children>)>,
+    mut visibilities: Query<&mut Visibility>,
 ) {
     if let Ok((&HexPos(player_pos), _facing, vision)) = player.get_single() {
-        for (&HexPos(pos), mut visibility) in viewable_things.iter_mut() {
-            visibility.is_visible = player_pos.distance(pos) <= vision.radius;
+        for (&HexPos(pos), entity, children) in positioned.iter() {
+            let visible = player_pos.distance(pos) <= vision.radius;
+
+            if let Ok(mut visibility) = visibilities.get_mut(entity) {
+                visibility.is_visible = visible;
+            }
+
+            if let Some(children) = children {
+                for &entity in children.iter() {
+                    if let Ok(mut visibility) = visibilities.get_mut(entity) {
+                        visibility.is_visible = visible;
+                    }
+                }
+            }
         }
     }
 }
