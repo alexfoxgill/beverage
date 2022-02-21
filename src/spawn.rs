@@ -4,6 +4,7 @@ use crate::domain::turn_queue::TurnQueue;
 use crate::domain::vision::Vision;
 use crate::intention::PlayerControlled;
 use crate::map::*;
+use crate::player_vision::RememberVis;
 use crate::Player;
 use bevy::prelude::*;
 use bevy_prototype_lyon::entity::ShapeBundle;
@@ -40,6 +41,16 @@ struct AiBundle {
     ai: AIBehaviour,
 }
 
+#[derive(Bundle)]
+struct MapTileBundle {
+    #[bundle]
+    shape: ShapeBundle,
+
+    pos: HexPos,
+    tile: MapTile,
+    remember: RememberVis,
+}
+
 pub fn spawn_map_entities(
     commands: &mut Commands,
     turn_queue: &mut TurnQueue,
@@ -65,16 +76,17 @@ pub fn spawn_map_entities(
                     fill_mode: FillMode::color(color),
                     outline_mode: StrokeMode::new(Color::BLACK, 1.0),
                 };
-                parent
-                    .spawn_bundle(GeometryBuilder::build_as(
-                        &make_hex_tile(c),
-                        draw_mode,
-                        Transform::default(),
-                    ))
-                    .insert(HexPos(c))
-                    .insert(MapTile {
+                let mut shape =
+                    GeometryBuilder::build_as(&make_hex_tile(c), draw_mode, Transform::default());
+                shape.visibility.is_visible = false;
+                parent.spawn_bundle(MapTileBundle {
+                    shape,
+                    pos: HexPos(c),
+                    tile: MapTile {
                         terrain: cell.terrain,
-                    });
+                    },
+                    remember: RememberVis,
+                });
             }
         })
         .id();

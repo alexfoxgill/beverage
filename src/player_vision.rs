@@ -13,22 +13,29 @@ impl Plugin for PlayerVisionPlugin {
     }
 }
 
+#[derive(Component)]
+pub struct RememberVis;
+
 fn update_visibility(
     player: Query<(&HexPos, &Facing, &Vision), With<Player>>,
     positioned: Query<(&HexPos, Entity, Option<&Children>)>,
-    mut visibilities: Query<&mut Visibility>,
+    mut visibilities: Query<(&mut Visibility, Option<&RememberVis>)>,
 ) {
     if let Ok((&HexPos(player_pos), _facing, vision)) = player.get_single() {
         for (&HexPos(pos), entity, children) in positioned.iter() {
             let visible = player_pos.distance(pos) <= vision.radius;
 
-            if let Ok(mut visibility) = visibilities.get_mut(entity) {
-                visibility.is_visible = visible;
+            if let Ok((mut visibility, remember)) = visibilities.get_mut(entity) {
+                match (visibility.is_visible, visible, remember.is_some()) {
+                    (x, y, _) if x == y => (),
+                    (true, false, true) => (),
+                    _ => visibility.is_visible = visible,
+                }
             }
 
             if let Some(children) = children {
                 for &entity in children.iter() {
-                    if let Ok(mut visibility) = visibilities.get_mut(entity) {
+                    if let Ok((mut visibility, _)) = visibilities.get_mut(entity) {
                         visibility.is_visible = visible;
                     }
                 }
