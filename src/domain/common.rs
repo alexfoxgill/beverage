@@ -6,7 +6,6 @@ pub const HEX_SPACING: Spacing = Spacing::FlatTop(40.0);
 
 pub type HexDirection = hex2d::Direction;
 
-
 #[derive(Component, Debug)]
 pub struct Actor {
     pub actions_per_turn: u8,
@@ -33,7 +32,7 @@ impl Default for Facing {
     }
 }
 
-#[derive(Component, PartialEq, Eq, Clone, Hash)]
+#[derive(Component, PartialEq, Eq, Clone, Hash, Debug)]
 pub struct HexPos(pub Coordinate);
 
 impl HexPos {

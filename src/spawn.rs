@@ -4,7 +4,8 @@ use crate::domain::turn_queue::TurnQueue;
 use crate::domain::vision::Vision;
 use crate::intention::PlayerControlled;
 use crate::map::*;
-use crate::player_vision::RememberVis;
+use crate::player_vision::PlayerVisibility;
+use crate::render::map::tile_render_bundle;
 use crate::Player;
 use bevy::prelude::*;
 use bevy_prototype_lyon::entity::ShapeBundle;
@@ -39,6 +40,7 @@ struct AiBundle {
     actor: ActorBundle,
 
     ai: AIBehaviour,
+    player_vis: PlayerVisibility,
 }
 
 #[derive(Bundle)]
@@ -48,7 +50,7 @@ struct MapTileBundle {
 
     pos: HexPos,
     tile: MapTile,
-    remember: RememberVis,
+    player_vis: PlayerVisibility,
 }
 
 pub fn spawn_map_entities(
@@ -56,36 +58,19 @@ pub fn spawn_map_entities(
     turn_queue: &mut TurnQueue,
     map: &Map,
 ) -> Entity {
-    fn make_hex_tile(coord: Coordinate) -> RegularPolygon {
-        let (x, y) = coord.to_pixel(HEX_SPACING);
-        RegularPolygon {
-            sides: 6,
-            feature: RegularPolygonFeature::Radius(40.0),
-            center: Vec2::new(x, -y),
-        }
-    }
     let map_entity = commands
         .spawn()
         .with_children(|parent| {
             for (&c, cell) in map.cells.iter() {
-                let color = match cell.terrain {
-                    Terrain::Floor => Color::OLIVE,
-                    Terrain::Wall => Color::MIDNIGHT_BLUE,
+                let tile = MapTile {
+                    terrain: cell.terrain,
                 };
-                let draw_mode = DrawMode::Outlined {
-                    fill_mode: FillMode::color(color),
-                    outline_mode: StrokeMode::new(Color::BLACK, 1.0),
-                };
-                let mut shape =
-                    GeometryBuilder::build_as(&make_hex_tile(c), draw_mode, Transform::default());
-                shape.visibility.is_visible = false;
+                let shape = tile_render_bundle(c, &tile);
                 parent.spawn_bundle(MapTileBundle {
                     shape,
                     pos: HexPos(c),
-                    tile: MapTile {
-                        terrain: cell.terrain,
-                    },
-                    remember: RememberVis,
+                    tile,
+                    player_vis: PlayerVisibility::new_persistent(),
                 });
             }
         })
@@ -219,5 +204,6 @@ fn new_enemy(coord: Coordinate, ai: AIBehaviour) -> AiBundle {
             actor,
         },
         ai,
+        player_vis: PlayerVisibility::new_transient(),
     }
 }
