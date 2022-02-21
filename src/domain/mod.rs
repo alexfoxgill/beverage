@@ -6,6 +6,7 @@ pub mod actions;
 pub mod common;
 pub mod effects;
 pub mod turn_queue;
+pub mod vision;
 
 pub struct DomainPlugin;
 
