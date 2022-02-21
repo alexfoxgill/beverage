@@ -3,6 +3,7 @@ use bevy::prelude::*;
 use bevy_easings::EasingsPlugin;
 use bevy_prototype_lyon::prelude::*;
 use domain::turn_queue::{TurnQueue, TurnQueuePlugin};
+use player_vision::PlayerVisionPlugin;
 use wasm_bindgen::prelude::*;
 
 pub mod ai;
@@ -13,6 +14,7 @@ pub mod domain;
 pub mod intention;
 pub mod map;
 pub mod pathfinding;
+pub mod player_vision;
 pub mod spawn;
 pub mod turn_engine;
 
@@ -50,6 +52,7 @@ impl Plugin for GamePlugin {
             .add_plugin(AiPlugin)
             .add_plugin(IntentionPlugin)
             .add_plugin(AnimationPlugin)
+            .add_plugin(PlayerVisionPlugin)
             .add_system(bevy::input::system::exit_on_esc_system)
             .add_startup_system(setup);
     }

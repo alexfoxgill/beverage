@@ -10,6 +10,12 @@ pub struct Vision {
     pub radius: i32,
 }
 
+impl Vision {
+    pub fn new(radius: i32) -> Vision {
+        Vision { radius }
+    }
+}
+
 pub struct ViewCone {
     from: Coordinate,
     left_dir: HexDirection,
