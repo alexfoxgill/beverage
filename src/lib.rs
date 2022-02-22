@@ -4,11 +4,10 @@ use bevy_easings::EasingsPlugin;
 use bevy_prototype_lyon::prelude::*;
 use domain::turn_queue::{TurnQueue, TurnQueuePlugin};
 use player_vision::PlayerVisionPlugin;
-use render::DomainRenderPlugin;
+use render::{animation::AnimationPlugin, DomainRenderPlugin};
 use wasm_bindgen::prelude::*;
 
 pub mod ai;
-pub mod animation;
 pub mod camera;
 pub mod component_index;
 pub mod domain;
@@ -21,7 +20,6 @@ pub mod spawn;
 pub mod turn_engine;
 
 use ai::*;
-use animation::*;
 use camera::*;
 use domain::*;
 use intention::*;
@@ -45,7 +43,6 @@ impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(Msaa { samples: 4 })
             .insert_resource(ClearColor(Color::rgb(0.3, 0.3, 0.4)))
-            .add_state(AnimatingState::Still)
             .add_plugin(CameraPlugin)
             .add_plugin(MapPlugin)
             .add_plugin(TurnEnginePlugin)

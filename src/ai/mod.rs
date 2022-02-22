@@ -5,7 +5,6 @@ use hex2d::*;
 use itertools::*;
 use rand::prelude::*;
 
-use crate::animation::AnimatingState;
 use crate::domain::actions::end_turn::EndTurnAction;
 use crate::domain::actions::rotate::RotateAction;
 use crate::domain::actions::step::StepAction;
@@ -14,6 +13,7 @@ use crate::domain::common::*;
 use crate::domain::turn_queue::TurnQueue;
 use crate::map::{MapTile, Terrain};
 use crate::pathfinding::{a_star, Move};
+use crate::render::animation::AnimatingState;
 use crate::turn_engine::actions::ActionQueue;
 use crate::Player;
 

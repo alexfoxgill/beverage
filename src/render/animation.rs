@@ -8,7 +8,7 @@ pub struct AnimationPlugin;
 
 impl Plugin for AnimationPlugin {
     fn build(&self, app: &mut App) {
-        app.add_stage_after(
+        app.add_state(AnimatingState::Still).add_stage_after(
             TurnExecution,
             "AnimationStage",
             SystemStage::parallel()

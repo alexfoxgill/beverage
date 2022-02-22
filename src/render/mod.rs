@@ -2,6 +2,8 @@ use bevy::prelude::*;
 
 use self::map::MapRenderPlugin;
 
+pub mod actor;
+pub mod animation;
 pub mod map;
 
 pub struct DomainRenderPlugin;

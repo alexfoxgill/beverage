@@ -2,7 +2,7 @@ use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
 use hex2d::Coordinate;
 
 use crate::{
-    domain::common::{HexPos, HEX_SPACING},
+    domain::common::HEX_SPACING,
     map::{MapTile, Terrain},
     player_vision::{PlayerVisibility, PlayerVisionUpdate, VisibilityMemory},
 };

@@ -5,12 +5,13 @@ use crate::domain::vision::Vision;
 use crate::intention::PlayerControlled;
 use crate::map::*;
 use crate::player_vision::PlayerVisibility;
+use crate::render::actor::direction_indicator;
+use crate::render::actor::render_enemy;
+use crate::render::actor::render_player;
 use crate::render::map::tile_render_bundle;
 use crate::Player;
 use bevy::prelude::*;
 use bevy_prototype_lyon::entity::ShapeBundle;
-use bevy_prototype_lyon::prelude::*;
-use bevy_prototype_lyon::shapes::*;
 use hex2d::*;
 use rand::prelude::*;
 
@@ -111,17 +112,7 @@ pub fn spawn_player(
 fn new_player(coord: Coordinate) -> PlayerBundle {
     let facing = Facing::default();
     let pos = HexPos(coord);
-    let shape = GeometryBuilder::build_as(
-        &Circle {
-            radius: 30.0,
-            center: Vec2::new(0.0, 0.0),
-        },
-        DrawMode::Outlined {
-            fill_mode: FillMode::color(Color::rgba(1.0, 1.0, 1.0, 0.1)),
-            outline_mode: StrokeMode::new(Color::BLACK, 1.0),
-        },
-        Transform::default(),
-    );
+    let shape = render_player();
 
     let actor = Actor {
         actions_per_turn: 2,
@@ -160,36 +151,11 @@ pub fn spawn_enemy(
     enemy
 }
 
-fn direction_indicator() -> ShapeBundle {
-    GeometryBuilder::build_as(
-        &shapes::Polygon {
-            points: vec![
-                Vec2::new(-15.0, 30.0),
-                Vec2::new(0.0, 45.0),
-                Vec2::new(15.0, 30.0),
-            ],
-            closed: true,
-        },
-        DrawMode::Fill(FillMode::color(Color::YELLOW)),
-        Transform::default(),
-    )
-}
-
 fn new_enemy(coord: Coordinate, ai: AIBehaviour) -> AiBundle {
     let direction = HexDirection::all().choose(&mut thread_rng()).unwrap();
     let facing = Facing(*direction);
     let pos = HexPos(coord);
-    let shape = GeometryBuilder::build_as(
-        &Circle {
-            radius: 30.0,
-            center: Vec2::new(0.0, 0.0),
-        },
-        DrawMode::Outlined {
-            fill_mode: FillMode::color(Color::RED),
-            outline_mode: StrokeMode::new(Color::BLACK, 1.0),
-        },
-        Transform::default(),
-    );
+    let shape = render_enemy();
 
     let actor = Actor {
         actions_per_turn: 2,
