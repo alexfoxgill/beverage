@@ -4,9 +4,9 @@ use hex2d::Coordinate;
 use crate::{
     domain::common::HEX_SPACING,
     map::{MapTile, Terrain},
-    player_vision::{PlayerVisibility, PlayerVisionUpdate, VisibilityMemory},
 };
 
+use super::player_vision::{PlayerVisibility, PlayerVisionUpdate, VisibilityMemory};
 use bevy::prelude::*;
 
 pub struct MapRenderPlugin;

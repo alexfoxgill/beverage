@@ -4,11 +4,10 @@ use crate::domain::turn_queue::TurnQueue;
 use crate::domain::vision::Vision;
 use crate::intention::PlayerControlled;
 use crate::map::*;
-use crate::player_vision::PlayerVisibility;
-use crate::render::actor::direction_indicator;
 use crate::render::actor::render_enemy;
 use crate::render::actor::render_player;
 use crate::render::map::tile_render_bundle;
+use crate::render::player_vision::PlayerVisibility;
 use crate::Player;
 use bevy::prelude::*;
 use bevy_prototype_lyon::entity::ShapeBundle;
@@ -97,12 +96,7 @@ pub fn spawn_player(
     turn_queue: &mut TurnQueue,
     pos: Coordinate,
 ) -> Entity {
-    let player = commands
-        .spawn_bundle(new_player(pos))
-        .with_children(|player| {
-            player.spawn_bundle(direction_indicator());
-        })
-        .id();
+    let player = commands.spawn_bundle(new_player(pos)).id();
 
     turn_queue.enqueue(player);
 
@@ -139,12 +133,7 @@ pub fn spawn_enemy(
     coordinate: Coordinate,
     ai: AIBehaviour,
 ) -> Entity {
-    let enemy = commands
-        .spawn_bundle(new_enemy(coordinate, ai))
-        .with_children(|parent| {
-            parent.spawn_bundle(direction_indicator());
-        })
-        .id();
+    let enemy = commands.spawn_bundle(new_enemy(coordinate, ai)).id();
 
     turn_queue.enqueue(enemy);
 
