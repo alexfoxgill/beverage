@@ -1,7 +1,9 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, utils::HashSet};
+use hex2d::{Coordinate, Position};
 
 use crate::{
     domain::{common::*, vision::Vision},
+    map::{MapTile, Terrain},
     Player,
 };
 
@@ -57,13 +59,27 @@ impl PlayerVisibility {
 }
 
 fn update_player_visibility(
-    player: Query<(&HexPos, &Vision), With<Player>>,
+    player: Query<(&HexPos, &Facing, &Vision), With<Player>>,
     positioned: Query<(&HexPos, Entity)>,
+    map_tiles: Query<(&HexPos, &MapTile)>,
     mut visibilities: Query<&mut PlayerVisibility>,
 ) {
-    if let Ok((&HexPos(player_pos), vision)) = player.get_single() {
+    if let Ok((&HexPos(player_coord), &Facing(player_dir), vision)) = player.get_single() {
+        let player_pos = Position::new(player_coord, player_dir);
+
+        let walls: HashSet<Coordinate> = map_tiles
+            .iter()
+            .filter_map(|(c, t)| {
+                if t.terrain == Terrain::Wall {
+                    Some(c.0)
+                } else {
+                    None
+                }
+            })
+            .collect();
+
         for (&HexPos(pos), entity) in positioned.iter() {
-            let is_visible = player_pos.distance(pos) <= vision.radius;
+            let is_visible = vision.can_see_relative(player_pos, pos, |x| walls.contains(&x));
 
             if let Ok(mut visibility) = visibilities.get_mut(entity) {
                 if visibility.is_visible != is_visible {

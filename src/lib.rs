@@ -12,6 +12,7 @@ pub mod component_index;
 pub mod domain;
 pub mod intention;
 pub mod map;
+pub mod maths;
 pub mod pathfinding;
 pub mod render;
 pub mod spawn;

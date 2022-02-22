@@ -2,8 +2,10 @@ use crate::ai::*;
 use crate::domain::common::*;
 use crate::domain::turn_queue::TurnQueue;
 use crate::domain::vision::Vision;
+use crate::domain::vision::VisionType;
 use crate::intention::PlayerControlled;
 use crate::map::*;
+use crate::maths::RADIANS_120DEG;
 use crate::render::actor::render_enemy;
 use crate::render::actor::render_player;
 use crate::render::map::tile_render_bundle;
@@ -113,6 +115,11 @@ fn new_player(coord: Coordinate) -> PlayerBundle {
         actions_remaining: 2,
     };
 
+    let vision = VisionType::Radial(5)
+        .and(VisionType::Conical(RADIANS_120DEG))
+        .or(VisionType::Radial(1))
+        .and(VisionType::Obstructable);
+
     PlayerBundle {
         actor: ActorBundle {
             facing,
@@ -121,7 +128,7 @@ fn new_player(coord: Coordinate) -> PlayerBundle {
             actor,
         },
 
-        vision: Vision::new(5),
+        vision: Vision::new(vision),
         player_controlled: PlayerControlled,
         player: Player,
     }
