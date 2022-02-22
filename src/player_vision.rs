@@ -58,24 +58,16 @@ impl PlayerVisibility {
 
 fn update_player_visibility(
     player: Query<(&HexPos, &Vision), With<Player>>,
-    positioned: Query<(&HexPos, Entity, Option<&Children>)>,
+    positioned: Query<(&HexPos, Entity)>,
     mut visibilities: Query<&mut PlayerVisibility>,
 ) {
     if let Ok((&HexPos(player_pos), vision)) = player.get_single() {
-        for (&HexPos(pos), entity, children) in positioned.iter() {
+        for (&HexPos(pos), entity) in positioned.iter() {
             let is_visible = player_pos.distance(pos) <= vision.radius;
 
             if let Ok(mut visibility) = visibilities.get_mut(entity) {
                 if visibility.is_visible != is_visible {
                     visibility.set_visibility(is_visible);
-
-                    if let Some(children) = children {
-                        for &entity in children.iter() {
-                            if let Ok(mut visibility) = visibilities.get_mut(entity) {
-                                visibility.set_visibility(is_visible);
-                            }
-                        }
-                    }
                 }
             }
         }
