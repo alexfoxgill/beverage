@@ -4,6 +4,7 @@ use bevy_easings::EasingsPlugin;
 use bevy_prototype_lyon::prelude::*;
 use domain::turn_queue::{TurnQueue, TurnQueuePlugin};
 use render::DomainRenderPlugin;
+use ui::UIPlugin;
 use wasm_bindgen::prelude::*;
 
 pub mod ai;
@@ -17,6 +18,7 @@ pub mod pathfinding;
 pub mod render;
 pub mod spawn;
 pub mod turn_engine;
+pub mod ui;
 
 use ai::*;
 use camera::*;
@@ -50,6 +52,7 @@ impl Plugin for GamePlugin {
             .add_plugin(AiPlugin)
             .add_plugin(IntentionPlugin)
             .add_plugin(DomainRenderPlugin)
+            .add_plugin(UIPlugin)
             .add_system(bevy::input::system::exit_on_esc_system)
             .add_startup_system(setup);
     }

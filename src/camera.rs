@@ -15,11 +15,9 @@ impl Plugin for CameraPlugin {
 struct MainCamera;
 
 fn setup(mut commands: Commands) {
-    // cameras
     commands
         .spawn_bundle(OrthographicCameraBundle::new_2d())
         .insert(MainCamera);
-    commands.spawn_bundle(UiCameraBundle::default());
 }
 
 fn follow_player(
