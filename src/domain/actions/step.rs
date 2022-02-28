@@ -3,7 +3,7 @@ use crate::{
     domain::effects::{energy_cost::EnergyCostEffect, move_entity::MoveEffect},
     map::{MapTile, Terrain},
     turn_engine::{
-        actions::{Action, ActionQueue},
+        actions::{Action, ActionQueue, ActionResult, AnyActionError},
         effects::EffectQueue,
     },
 };
@@ -32,24 +32,28 @@ pub fn handler(
     actor: Query<(&Actor, &HexPos, &Facing)>,
     occupied: Query<&HexPos, With<Actor>>,
     map_tiles: Query<(&HexPos, &MapTile)>,
-) -> EffectQueue {
+) -> ActionResult {
     let entity = action.0;
     let cost = action.cost();
-    if let Ok((actor, pos, facing)) = actor.get(entity) {
-        let to = pos.get_facing(facing.0);
-        if actor.actions_remaining < cost {
-            return Default::default();
-        }
-        if occupied.iter().any(|x| x.0 == to) {
-            return Default::default();
-        }
-        if map_tiles
-            .iter()
-            .any(|(x, tile)| x.0 == to && tile.terrain == Terrain::Floor)
-        {
-            return EffectQueue::new(EnergyCostEffect::new(entity, cost))
-                .with(MoveEffect::new(entity, to));
-        }
+    let (actor, pos, facing) = actor
+        .get(entity)
+        .ok()
+        .ok_or(AnyActionError::generic("Missing components"))?;
+
+    let to = pos.get_facing(facing.0);
+    if actor.actions_remaining < cost {
+        return AnyActionError::res_generic("Insufficient actions");
     }
-    Default::default()
+    if occupied.iter().any(|x| x.0 == to) {
+        return AnyActionError::res_generic("Destination occupied");
+    }
+
+    if !map_tiles
+        .iter()
+        .any(|(x, tile)| x.0 == to && tile.terrain == Terrain::Floor)
+    {
+        return AnyActionError::res_generic("Destination not floor");
+    }
+
+    Ok(EffectQueue::new(EnergyCostEffect::new(entity, cost)).then(MoveEffect::new(entity, to)))
 }

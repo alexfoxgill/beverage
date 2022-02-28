@@ -62,10 +62,10 @@ impl EffectQueue {
     }
 
     pub fn new<T: Into<AnyEffect>>(effect: T) -> Self {
-        Self::default().with(effect)
+        Self::default().then(effect)
     }
 
-    pub fn with<T: Into<AnyEffect>>(mut self, effect: T) -> Self {
+    pub fn then<T: Into<AnyEffect>>(mut self, effect: T) -> Self {
         self.0.push_back(effect.into());
         self
     }

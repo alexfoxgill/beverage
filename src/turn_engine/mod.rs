@@ -3,7 +3,7 @@ use std::any::TypeId;
 use bevy::{prelude::*, utils::HashMap};
 
 use self::{
-    actions::{Action, ActionQueue, AnyAction},
+    actions::{Action, ActionQueue, ActionResult, AnyAction},
     effects::{AnyEffect, Effect, EffectQueue},
 };
 
@@ -45,10 +45,9 @@ impl<InDyn, In, Out, S> AnyRunner<InDyn, Out> for TypedSystemRunner<In, Out, S>
 where
     InDyn: DynamicWrapper<In>,
     S: System<In = In, Out = Out>,
-    Out: Default,
 {
-    fn run(&mut self, action: InDyn, world: &mut World) -> Out {
-        if let Some(input) = action.downcast() {
+    fn run(&mut self, input: InDyn, world: &mut World) -> Out {
+        if let Some(input) = input.downcast() {
             if !self.initialized {
                 self.system.initialize(world);
                 self.initialized = true;
@@ -57,7 +56,7 @@ where
             self.system.apply_buffers(world);
             res
         } else {
-            Default::default()
+            panic!("AnyRunner downcast failed");
         }
     }
 }
@@ -66,7 +65,7 @@ struct SystemRegistry<InDyn, Out = ()> {
     map: HashMap<TypeId, Box<dyn AnyRunner<InDyn, Out>>>,
 }
 
-impl<InDyn, Out: Default + 'static> SystemRegistry<InDyn, Out> {
+impl<InDyn, Out: 'static> SystemRegistry<InDyn, Out> {
     pub fn register_system<In: 'static, Params>(&mut self, system: impl IntoSystem<In, Out, Params>)
     where
         InDyn: DynamicWrapper<In>,
@@ -86,14 +85,13 @@ impl<InDyn, Out> Default for SystemRegistry<InDyn, Out> {
     }
 }
 
-impl<InDyn: InnerType, Out: Default> AnyRunner<InDyn, Out> for SystemRegistry<InDyn, Out> {
+impl<InDyn: InnerType, Out> AnyRunner<InDyn, Out> for SystemRegistry<InDyn, Out> {
     fn run(&mut self, input: InDyn, world: &mut World) -> Out {
         let input_type = input.inner_type();
         if let Some(handler) = self.map.get_mut(&input_type) {
             handler.run(input, world)
         } else {
-            eprintln!("Could not find runner for {:?}", input_type);
-            Default::default()
+            panic!("Could not find runner for {:?}", input_type);
         }
     }
 }
@@ -101,18 +99,18 @@ impl<InDyn: InnerType, Out: Default> AnyRunner<InDyn, Out> for SystemRegistry<In
 #[derive(Default)]
 pub struct TurnSystems {
     effects: SystemRegistry<AnyEffect>,
-    actions: SystemRegistry<AnyAction, EffectQueue>,
+    actions: SystemRegistry<AnyAction, ActionResult>,
 }
 
 impl TurnSystems {
     pub fn register_action_handler<A: Action + 'static, Params>(
         &mut self,
-        system: impl IntoSystem<A, EffectQueue, Params>,
+        system: impl IntoSystem<A, ActionResult, Params>,
     ) {
         self.actions.register_system(system);
     }
 
-    pub fn run_action_system(&mut self, action: AnyAction, world: &mut World) -> EffectQueue {
+    pub fn run_action_system(&mut self, action: AnyAction, world: &mut World) -> ActionResult {
         self.actions.run(action, world)
     }
 
@@ -135,9 +133,15 @@ impl Stage for TurnExecutorLoop {
         world.resource_scope(|world, mut systems: Mut<TurnSystems>| 'actions: loop {
             let mut action_queue = world.get_resource_mut::<ActionQueue>().unwrap();
             if let Some(action) = action_queue.pop() {
-                let new_effects = systems.run_action_system(action, world);
-                let mut effect_queue = world.get_resource_mut::<EffectQueue>().unwrap();
-                effect_queue.append(new_effects);
+                match systems.run_action_system(action, world) {
+                    Ok(new_effects) => {
+                        let mut effect_queue = world.get_resource_mut::<EffectQueue>().unwrap();
+                        effect_queue.append(new_effects);
+                    }
+                    Err(message) => {
+                        eprintln!("Action forbidden: {message:?}")
+                    }
+                }
 
                 'effects: loop {
                     let mut effect_queue = world.get_resource_mut::<EffectQueue>().unwrap();

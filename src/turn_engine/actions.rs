@@ -3,7 +3,7 @@ use std::collections::VecDeque;
 
 use downcast_rs::*;
 
-use super::{DynamicWrapper, InnerType};
+use super::{effects::EffectQueue, DynamicWrapper, InnerType};
 
 pub trait Action: Downcast + Send + Sync + std::fmt::Debug {
     fn cost(&self) -> u8;
@@ -73,3 +73,25 @@ impl ActionQueue {
         cost
     }
 }
+
+pub type ActionResult = Result<EffectQueue, AnyActionError>;
+
+pub trait ActionError: core::fmt::Debug {}
+
+#[derive(Debug)]
+pub struct AnyActionError(Box<dyn ActionError>);
+
+impl AnyActionError {
+    pub fn res_generic<T>(str: &str) -> Result<T, AnyActionError> {
+        Err(Self::generic(str))
+    }
+
+    pub fn generic(str: &str) -> AnyActionError {
+        AnyActionError(Box::new(GenericActionError(str.into())))
+    }
+}
+
+#[derive(Debug)]
+pub struct GenericActionError(String);
+
+impl ActionError for GenericActionError {}

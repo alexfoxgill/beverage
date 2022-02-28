@@ -1,7 +1,7 @@
 use crate::{
     domain::effects::end_turn::EndTurnEffect,
     turn_engine::{
-        actions::{Action, ActionQueue},
+        actions::{Action, ActionQueue, ActionResult},
         effects::EffectQueue,
     },
 };
@@ -26,6 +26,6 @@ pub fn generator(In(e): In<Entity>) -> ActionQueue {
     ActionQueue::new(EndTurnAction::new(e))
 }
 
-pub fn handler(In(EndTurnAction(entity)): In<EndTurnAction>) -> EffectQueue {
-    EffectQueue::new(EndTurnEffect::new(entity))
+pub fn handler(In(EndTurnAction(entity)): In<EndTurnAction>) -> ActionResult {
+    Ok(EffectQueue::new(EndTurnEffect::new(entity)))
 }
