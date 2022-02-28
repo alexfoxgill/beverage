@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use bevy_easings::EasingsPlugin;
 use bevy_prototype_lyon::prelude::*;
 use domain::turn_queue::{TurnQueue, TurnQueuePlugin};
-use render::DomainRenderPlugin;
+use render::GameRenderPlugin;
 use ui::UIPlugin;
 use wasm_bindgen::prelude::*;
 
@@ -42,16 +42,14 @@ pub struct GamePlugin;
 
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(Msaa { samples: 4 })
-            .insert_resource(ClearColor(Color::rgb(0.3, 0.3, 0.4)))
-            .add_plugin(CameraPlugin)
+        app.add_plugin(CameraPlugin)
             .add_plugin(MapPlugin)
             .add_plugin(TurnEnginePlugin)
             .add_plugin(TurnQueuePlugin)
             .add_plugin(DomainPlugin)
             .add_plugin(AiPlugin)
             .add_plugin(IntentionPlugin)
-            .add_plugin(DomainRenderPlugin)
+            .add_plugin(GameRenderPlugin)
             .add_plugin(UIPlugin)
             .add_system(bevy::input::system::exit_on_esc_system)
             .add_startup_system(setup);

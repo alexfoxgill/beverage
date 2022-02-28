@@ -10,10 +10,12 @@ pub mod animation;
 pub mod map;
 pub mod player_vision;
 
-pub struct DomainRenderPlugin;
-impl Plugin for DomainRenderPlugin {
+pub struct GameRenderPlugin;
+impl Plugin for GameRenderPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugin(MapRenderPlugin)
+        app.insert_resource(Msaa { samples: 4 })
+            .insert_resource(ClearColor(Color::rgb(0.2, 0.2, 0.25)))
+            .add_plugin(MapRenderPlugin)
             .add_plugin(ActorRenderPlugin)
             .add_plugin(PlayerVisionPlugin)
             .add_plugin(AnimationPlugin);
