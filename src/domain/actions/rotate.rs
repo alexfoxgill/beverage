@@ -2,7 +2,7 @@ use crate::{
     domain::common::*,
     domain::effects::face::FaceEffect,
     turn_engine::{
-        actions::{Action, ActionQueue, ActionResult, AnyActionError},
+        actions::{Action, ActionQueue, ActionResult},
         effects::EffectQueue,
     },
 };
@@ -35,10 +35,7 @@ pub fn generator(In(e): In<Entity>) -> ActionQueue {
 }
 
 pub fn handler(In(action): In<RotateAction>, query: Query<&Facing>) -> ActionResult {
-    let facing = query
-        .get(action.entity)
-        .ok()
-        .ok_or(AnyActionError::generic("Missing entity"))?;
+    let facing = query.get(action.entity)?;
     let target = facing.rotated(action.angle);
     return Ok(EffectQueue::new(FaceEffect::new(action.entity, target)));
 }

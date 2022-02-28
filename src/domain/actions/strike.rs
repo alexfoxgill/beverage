@@ -34,10 +34,7 @@ pub fn handler(
 ) -> ActionResult {
     let attacker = action.0;
     let cost = action.cost();
-    let (pos, facing, actor) = query
-        .get(attacker)
-        .ok()
-        .ok_or(AnyActionError::generic("Missing components"))?;
+    let (pos, facing, actor) = query.get(attacker)?;
 
     if actor.actions_remaining <= 0 {
         return AnyActionError::res_generic("Insufficient action points");

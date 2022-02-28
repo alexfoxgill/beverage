@@ -1,6 +1,7 @@
 use std::any::TypeId;
 use std::collections::VecDeque;
 
+use bevy_ecs::query::QueryEntityError;
 use downcast_rs::*;
 
 use super::{effects::EffectQueue, DynamicWrapper, InnerType};
@@ -93,5 +94,14 @@ impl AnyActionError {
 
 #[derive(Debug)]
 pub struct GenericActionError(String);
-
 impl ActionError for GenericActionError {}
+
+#[derive(Debug)]
+pub struct QueryEntityActionError(QueryEntityError);
+impl ActionError for QueryEntityActionError {}
+
+impl From<QueryEntityError> for AnyActionError {
+    fn from(e: QueryEntityError) -> Self {
+        AnyActionError(Box::new(QueryEntityActionError(e)))
+    }
+}

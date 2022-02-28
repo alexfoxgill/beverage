@@ -36,9 +36,7 @@ pub fn handler(
     let entity = action.0;
     let cost = action.cost();
     let (actor, pos, facing) = actor
-        .get(entity)
-        .ok()
-        .ok_or(AnyActionError::generic("Missing components"))?;
+        .get(entity)?;
     let to = pos.get_facing(-facing.0);
     if actor.actions_remaining < cost {
         return AnyActionError::res_generic("Not enough action points");
