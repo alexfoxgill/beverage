@@ -1,6 +1,7 @@
 use std::any::TypeId;
 
 use bevy::{prelude::*, utils::HashMap};
+use bevy_ecs::archetype::ArchetypeGeneration;
 
 use self::{
     actions::{Action, ActionQueue, ActionResult, AnyAction},
@@ -16,6 +17,7 @@ where
 {
     system: S,
     initialized: bool,
+    archetype_generation: ArchetypeGeneration,
 }
 
 impl<In, Out, S> TypedSystemRunner<In, Out, S>
@@ -26,6 +28,7 @@ where
         TypedSystemRunner {
             system,
             initialized: false,
+            archetype_generation: ArchetypeGeneration::initial(),
         }
     }
 }
@@ -51,6 +54,23 @@ where
             if !self.initialized {
                 self.system.initialize(world);
                 self.initialized = true;
+            } else {
+                let archetypes = world.archetypes();
+                let new_generation = archetypes.generation();
+                let old_generation =
+                    std::mem::replace(&mut self.archetype_generation, new_generation);
+
+                let new_archetype_count = new_generation.value() - old_generation.value();
+
+                if new_archetype_count > 0 {
+                    for archetype in archetypes
+                        .iter()
+                        .skip(old_generation.value())
+                        .take(new_archetype_count)
+                    {
+                        self.system.new_archetype(archetype);
+                    }
+                }
             }
             let res = self.system.run(input, world);
             self.system.apply_buffers(world);
