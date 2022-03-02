@@ -8,7 +8,7 @@ use crate::{
 };
 use bevy::prelude::*;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct StrikeAction(Entity);
 
 impl StrikeAction {

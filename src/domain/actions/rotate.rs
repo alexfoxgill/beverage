@@ -9,7 +9,7 @@ use crate::{
 use bevy::prelude::*;
 use hex2d::Angle;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct RotateAction {
     entity: Entity,
     angle: Angle,

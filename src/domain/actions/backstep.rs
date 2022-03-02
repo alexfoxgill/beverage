@@ -9,7 +9,7 @@ use crate::{
 };
 use bevy::prelude::*;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct BackstepAction(Entity);
 
 impl BackstepAction {

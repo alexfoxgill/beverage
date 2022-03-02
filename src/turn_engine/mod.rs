@@ -146,40 +146,62 @@ impl TurnSystems {
     }
 }
 
-pub struct TurnExecutorLoop;
-
-impl Stage for TurnExecutorLoop {
+pub struct ActionExecutor;
+impl Stage for ActionExecutor {
     fn run(&mut self, world: &mut World) {
-        world.resource_scope(|world, mut systems: Mut<TurnSystems>| 'actions: loop {
-            let mut action_queue = world.get_resource_mut::<ActionQueue>().unwrap();
-            if let Some(action) = action_queue.pop() {
-                match systems.run_action_system(action, world) {
-                    Ok(new_effects) => {
-                        let mut effect_queue = world.get_resource_mut::<EffectQueue>().unwrap();
-                        effect_queue.append(new_effects);
+        world.resource_scope(|world, mut state: Mut<TurnState>| {
+            if let TurnState::Idle = *state {
+                world.resource_scope(|world, mut systems: Mut<TurnSystems>| {
+                    let mut action_queue = world.get_resource_mut::<ActionQueue>().unwrap();
+                    if let Some(action) = action_queue.pop() {
+                        match systems.run_action_system(action.clone(), world) {
+                            Ok(new_effects) => {
+                                let mut effect_queue =
+                                    world.get_resource_mut::<EffectQueue>().unwrap();
+                                effect_queue.append(new_effects);
+                                *state = TurnState::Executing(action);
+                            }
+                            Err(message) => {
+                                eprintln!("Action forbidden: {message:?}")
+                            }
+                        }
                     }
-                    Err(message) => {
-                        eprintln!("Action forbidden: {message:?}")
-                    }
-                }
-
-                'effects: loop {
-                    let mut effect_queue = world.get_resource_mut::<EffectQueue>().unwrap();
-                    if let Some(effect) = effect_queue.pop() {
-                        systems.run_effect_system(effect, world);
-                    } else {
-                        break 'effects;
-                    }
-                }
-            } else {
-                break 'actions;
+                });
             }
         });
     }
 }
 
+pub struct EffectExecutor;
+impl Stage for EffectExecutor {
+    fn run(&mut self, world: &mut World) {
+        world.resource_scope(|world, mut state: Mut<TurnState>| {
+            if let TurnState::Executing(_) = *state {
+                world.resource_scope(|world, mut systems: Mut<TurnSystems>| loop {
+                    let mut effect_queue = world.get_resource_mut::<EffectQueue>().unwrap();
+                    if let Some(effect) = effect_queue.pop() {
+                        systems.run_effect_system(effect, world);
+                    } else {
+                        break;
+                    }
+                });
+
+                *state = TurnState::Idle;
+            }
+        });
+    }
+}
+
+pub enum TurnState {
+    Idle,
+    Executing(AnyAction),
+}
+
 #[derive(Debug, Clone, Hash, PartialEq, Eq, StageLabel)]
-pub struct TurnExecution;
+pub enum TurnStage {
+    ExecuteAction,
+    ExecuteEffects,
+}
 
 pub struct TurnEnginePlugin;
 
@@ -188,6 +210,12 @@ impl Plugin for TurnEnginePlugin {
         app.init_resource::<TurnSystems>()
             .init_resource::<ActionQueue>()
             .init_resource::<EffectQueue>()
-            .add_stage_after(CoreStage::Update, TurnExecution, TurnExecutorLoop);
+            .insert_resource(TurnState::Idle)
+            .add_stage_after(CoreStage::Update, TurnStage::ExecuteAction, ActionExecutor)
+            .add_stage_after(
+                TurnStage::ExecuteAction,
+                TurnStage::ExecuteEffects,
+                EffectExecutor,
+            );
     }
 }

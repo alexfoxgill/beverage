@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use crate::{domain::common::*, turn_engine::TurnExecution};
+use crate::{domain::common::*, turn_engine::TurnStage};
 use bevy::prelude::*;
 use bevy_easings::{Ease, EaseFunction, EasingType};
 
@@ -9,7 +9,7 @@ pub struct AnimationPlugin;
 impl Plugin for AnimationPlugin {
     fn build(&self, app: &mut App) {
         app.add_state(AnimatingState::Still).add_stage_after(
-            TurnExecution,
+            TurnStage::ExecuteEffects,
             "AnimationStage",
             SystemStage::parallel()
                 .with_system(animate_movement.label("run_animations"))

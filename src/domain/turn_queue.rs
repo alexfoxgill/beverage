@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use crate::turn_engine::TurnExecution;
+use crate::turn_engine::TurnStage;
 
 use super::common::*;
 use bevy::prelude::*;
@@ -47,7 +47,7 @@ pub struct TurnQueuePlugin;
 impl Plugin for TurnQueuePlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<TurnQueue>().add_stage_after(
-            TurnExecution,
+            TurnStage::ExecuteEffects,
             "clean_turn_queue",
             SystemStage::parallel().with_system(remove_dead_from_queue),
         );

@@ -7,7 +7,7 @@ use crate::{
 };
 use bevy::prelude::*;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct EndTurnAction(Entity);
 
 impl EndTurnAction {

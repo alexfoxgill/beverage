@@ -3,15 +3,17 @@ use std::collections::VecDeque;
 
 use bevy_ecs::query::QueryEntityError;
 use downcast_rs::*;
+use dyn_clone::DynClone;
 
 use super::{effects::EffectQueue, DynamicWrapper, InnerType};
 
-pub trait Action: Downcast + Send + Sync + std::fmt::Debug {
+pub trait Action: Downcast + DynClone + Send + Sync + std::fmt::Debug {
     fn cost(&self) -> u8;
 }
 impl_downcast!(Action);
+dyn_clone::clone_trait_object!(Action);
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct AnyAction(pub Box<dyn Action>);
 
 impl AnyAction {
