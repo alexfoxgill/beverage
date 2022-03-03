@@ -47,7 +47,7 @@ pub struct TurnQueuePlugin;
 impl Plugin for TurnQueuePlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<TurnQueue>().add_stage_after(
-            TurnStage::ExecuteEffects,
+            TurnStage::Effects,
             "clean_turn_queue",
             SystemStage::parallel().with_system(remove_dead_from_queue),
         );

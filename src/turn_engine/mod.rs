@@ -155,11 +155,8 @@ impl Stage for ActionExecutor {
                     let mut action_queue = world.get_resource_mut::<ActionQueue>().unwrap();
                     if let Some(action) = action_queue.pop() {
                         match systems.run_action_system(action.clone(), world) {
-                            Ok(new_effects) => {
-                                let mut effect_queue =
-                                    world.get_resource_mut::<EffectQueue>().unwrap();
-                                effect_queue.append(new_effects);
-                                *state = TurnState::Executing(action);
+                            Ok(effects) => {
+                                *state = TurnState::Executing { action, effects };
                             }
                             Err(message) => {
                                 eprintln!("Action forbidden: {message:?}")
@@ -176,10 +173,9 @@ pub struct EffectExecutor;
 impl Stage for EffectExecutor {
     fn run(&mut self, world: &mut World) {
         world.resource_scope(|world, mut state: Mut<TurnState>| {
-            if let TurnState::Executing(_) = *state {
+            if let TurnState::Executing { effects, .. } = state.as_mut() {
                 world.resource_scope(|world, mut systems: Mut<TurnSystems>| loop {
-                    let mut effect_queue = world.get_resource_mut::<EffectQueue>().unwrap();
-                    if let Some(effect) = effect_queue.pop() {
+                    if let Some(effect) = effects.pop() {
                         systems.run_effect_system(effect, world);
                     } else {
                         break;
@@ -194,13 +190,17 @@ impl Stage for EffectExecutor {
 
 pub enum TurnState {
     Idle,
-    Executing(AnyAction),
+    Executing {
+        action: AnyAction,
+        effects: EffectQueue,
+    },
+    Paused,
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, StageLabel)]
 pub enum TurnStage {
-    ExecuteAction,
-    ExecuteEffects,
+    Action,
+    Effects,
 }
 
 pub struct TurnEnginePlugin;
@@ -209,13 +209,8 @@ impl Plugin for TurnEnginePlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<TurnSystems>()
             .init_resource::<ActionQueue>()
-            .init_resource::<EffectQueue>()
             .insert_resource(TurnState::Idle)
-            .add_stage_after(CoreStage::Update, TurnStage::ExecuteAction, ActionExecutor)
-            .add_stage_after(
-                TurnStage::ExecuteAction,
-                TurnStage::ExecuteEffects,
-                EffectExecutor,
-            );
+            .add_stage_after(CoreStage::Update, TurnStage::Action, ActionExecutor)
+            .add_stage_after(TurnStage::Action, TurnStage::Effects, EffectExecutor);
     }
 }
