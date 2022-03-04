@@ -3,7 +3,7 @@ use hex2d::Coordinate;
 
 use crate::{domain::common::HexPos, turn_engine::effects::Effect};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct MoveEffect(Entity, Coordinate);
 
 impl MoveEffect {

@@ -4,7 +4,7 @@ use crate::domain::common::*;
 use crate::domain::turn_queue::TurnQueue;
 use bevy::prelude::*;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct EndTurnEffect(Entity);
 
 impl EndTurnEffect {

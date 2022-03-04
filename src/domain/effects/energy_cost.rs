@@ -4,7 +4,7 @@ use crate::domain::common::Actor;
 
 use crate::turn_engine::effects::Effect;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct EnergyCostEffect(Entity, u8);
 
 impl EnergyCostEffect {

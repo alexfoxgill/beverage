@@ -4,7 +4,7 @@ use crate::domain::common::{Facing, HexDirection};
 
 use crate::turn_engine::effects::Effect;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct FaceEffect(Entity, HexDirection);
 
 impl FaceEffect {

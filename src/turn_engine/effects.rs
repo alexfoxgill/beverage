@@ -2,13 +2,15 @@ use std::any::TypeId;
 use std::collections::VecDeque;
 
 use downcast_rs::*;
+use dyn_clone::*;
 
 use super::{DynamicWrapper, InnerType};
 
-pub trait Effect: Downcast + Send + Sync + std::fmt::Debug {}
-impl_downcast!(Effect);
+pub trait Effect: Downcast + DynClone + Send + Sync + std::fmt::Debug {}
+downcast_rs::impl_downcast!(Effect);
+dyn_clone::clone_trait_object!(Effect);
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct AnyEffect(pub Box<dyn Effect>);
 
 impl<E: Effect> From<E> for AnyEffect {

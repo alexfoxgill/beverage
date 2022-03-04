@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::turn_engine::effects::Effect;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct KillEffect(Entity);
 
 impl KillEffect {
