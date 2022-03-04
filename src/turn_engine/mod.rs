@@ -39,6 +39,7 @@ trait AnyRunner<InDyn, Out = ()>: Send + Sync {
 
 trait DynamicWrapper<T> {
     fn downcast(self) -> Option<T>;
+    fn downcast_ref(&self) -> Option<&T>;
 }
 trait InnerType {
     fn inner_type(&self) -> TypeId;

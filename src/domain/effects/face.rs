@@ -5,7 +5,7 @@ use crate::domain::common::{Facing, HexDirection};
 use crate::turn_engine::effects::Effect;
 
 #[derive(Debug, Clone)]
-pub struct FaceEffect(Entity, HexDirection);
+pub struct FaceEffect(pub Entity, pub HexDirection);
 
 impl FaceEffect {
     pub fn new(entity: Entity, face: HexDirection) -> FaceEffect {

@@ -1,6 +1,8 @@
 use bevy::prelude::*;
 use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*, shapes::Circle};
 
+use crate::domain::common::{Facing, HexPos, HEX_SPACING};
+
 use super::player_vision::{PlayerVisibility, PlayerVisionUpdate, VisibilityMemory};
 
 pub struct ActorRenderPlugin;
@@ -40,7 +42,15 @@ fn actor_visibility(
     }
 }
 
-pub fn render_player() -> ShapeBundle {
+fn transform(pos: &HexPos, facing: &Facing) -> Transform {
+    Transform {
+        translation: pos.as_translation(HEX_SPACING),
+        rotation: facing.as_rotation(),
+        ..Transform::default()
+    }
+}
+
+pub fn render_player(pos: &HexPos, facing: &Facing) -> ShapeBundle {
     GeometryBuilder::new()
         .add(&Circle {
             radius: 30.0,
@@ -59,11 +69,11 @@ pub fn render_player() -> ShapeBundle {
                 fill_mode: FillMode::color(Color::WHITE),
                 outline_mode: StrokeMode::new(Color::BLACK, 1.0),
             },
-            Transform::default(),
+            transform(pos, facing),
         )
 }
 
-pub fn render_enemy() -> ShapeBundle {
+pub fn render_enemy(pos: &HexPos, facing: &Facing) -> ShapeBundle {
     GeometryBuilder::new()
         .add(&Circle {
             radius: 30.0,
@@ -82,6 +92,6 @@ pub fn render_enemy() -> ShapeBundle {
                 fill_mode: FillMode::color(Color::RED),
                 outline_mode: StrokeMode::new(Color::BLACK, 1.0),
             },
-            Transform::default(),
+            transform(pos, facing),
         )
 }

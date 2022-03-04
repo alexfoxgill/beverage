@@ -10,7 +10,7 @@ use crate::{
 use bevy::prelude::*;
 
 #[derive(Debug, Clone)]
-pub struct StepAction(Entity);
+pub struct StepAction(pub Entity);
 
 impl StepAction {
     pub fn new(entity: Entity) -> StepAction {
@@ -35,8 +35,7 @@ pub fn handler(
 ) -> ActionResult {
     let entity = action.0;
     let cost = action.cost();
-    let (actor, pos, facing) = actor
-        .get(entity)?;
+    let (actor, pos, facing) = actor.get(entity)?;
 
     let to = pos.get_facing(facing.0);
     if actor.actions_remaining < cost {

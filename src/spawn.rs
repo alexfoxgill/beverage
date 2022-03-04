@@ -108,7 +108,7 @@ pub fn spawn_player(
 fn new_player(coord: Coordinate) -> PlayerBundle {
     let facing = Facing::default();
     let pos = HexPos(coord);
-    let shape = render_player();
+    let shape = render_player(&pos, &facing);
 
     let actor = Actor {
         actions_per_turn: 2,
@@ -151,7 +151,7 @@ fn new_enemy(coord: Coordinate, ai: AIBehaviour) -> AiBundle {
     let direction = HexDirection::all().choose(&mut thread_rng()).unwrap();
     let facing = Facing(*direction);
     let pos = HexPos(coord);
-    let shape = render_enemy();
+    let shape = render_enemy(&pos, &facing);
 
     let actor = Actor {
         actions_per_turn: 2,

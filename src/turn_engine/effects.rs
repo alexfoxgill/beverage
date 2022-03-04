@@ -19,10 +19,14 @@ impl<E: Effect> From<E> for AnyEffect {
     }
 }
 
-impl<T: Effect> DynamicWrapper<T> for AnyEffect {
-    fn downcast(self) -> Option<T> {
-        let res = self.0.downcast::<T>().ok()?;
+impl<E: Effect> DynamicWrapper<E> for AnyEffect {
+    fn downcast(self) -> Option<E> {
+        let res = self.0.downcast::<E>().ok()?;
         Some(*res)
+    }
+
+    fn downcast_ref(&self) -> Option<&E> {
+        self.0.downcast_ref::<E>()
     }
 }
 
@@ -74,5 +78,9 @@ impl EffectQueue {
 
     pub fn append(&mut self, mut other: EffectQueue) {
         self.0.append(&mut other.0);
+    }
+
+    pub fn find<E: Effect>(&self) -> Option<&E> {
+        self.0.iter().find_map(|e| e.downcast_ref())
     }
 }

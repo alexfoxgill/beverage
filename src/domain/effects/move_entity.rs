@@ -4,7 +4,7 @@ use hex2d::Coordinate;
 use crate::{domain::common::HexPos, turn_engine::effects::Effect};
 
 #[derive(Debug, Clone)]
-pub struct MoveEffect(Entity, Coordinate);
+pub struct MoveEffect(pub Entity, pub Coordinate);
 
 impl MoveEffect {
     pub fn new(entity: Entity, to: Coordinate) -> MoveEffect {

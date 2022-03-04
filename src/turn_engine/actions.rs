@@ -28,10 +28,14 @@ impl<A: Action> From<A> for AnyAction {
     }
 }
 
-impl<T: Action> DynamicWrapper<T> for AnyAction {
-    fn downcast(self) -> Option<T> {
-        let res = self.0.downcast::<T>().ok()?;
+impl<A: Action> DynamicWrapper<A> for AnyAction {
+    fn downcast(self) -> Option<A> {
+        let res = self.0.downcast::<A>().ok()?;
         Some(*res)
+    }
+
+    fn downcast_ref(&self) -> Option<&A> {
+        self.0.downcast_ref()
     }
 }
 impl InnerType for AnyAction {
