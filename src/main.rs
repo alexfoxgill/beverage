@@ -1,3 +1,7 @@
+use std::env;
+
 fn main() {
-    beverage::run();
+    let scene = env::args().nth(1);
+
+    beverage::run(Default::default());
 }

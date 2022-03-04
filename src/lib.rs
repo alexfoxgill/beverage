@@ -2,10 +2,10 @@ use bevy::prelude::*;
 
 use bevy_easings::EasingsPlugin;
 use bevy_prototype_lyon::prelude::*;
-use domain::turn_queue::{TurnQueue, TurnQueuePlugin};
+use domain::turn_queue::TurnQueuePlugin;
 use render::GameRenderPlugin;
+use scenario::{ArenaScenario, CaveScenario};
 use ui::UIPlugin;
-use wasm_bindgen::prelude::*;
 
 pub mod ai;
 pub mod camera;
@@ -16,6 +16,7 @@ pub mod map;
 pub mod maths;
 pub mod pathfinding;
 pub mod render;
+pub mod scenario;
 pub mod spawn;
 pub mod turn_engine;
 pub mod ui;
@@ -25,17 +26,50 @@ use camera::*;
 use domain::*;
 use intention::*;
 use map::*;
+use serde::*;
 use spawn::*;
 use turn_engine::*;
+use wasm_bindgen::prelude::*;
+
+#[derive(Deserialize)]
+pub enum Scenario {
+    Arena,
+    Cave,
+}
+
+#[derive(Deserialize)]
+pub struct RunParams {
+    scenario: Scenario,
+}
+
+impl Default for RunParams {
+    fn default() -> Self {
+        Self {
+            scenario: Scenario::Arena,
+        }
+    }
+}
 
 #[wasm_bindgen]
-pub fn run() {
-    App::new()
-        .add_plugins(DefaultPlugins)
+pub fn run_js(js: &JsValue) {
+    let params = js.into_serde().unwrap_or_default();
+    run(params)
+}
+
+pub fn run(params: RunParams) {
+    let mut app = App::new();
+
+    app.add_plugins(DefaultPlugins)
         .add_plugin(ShapePlugin)
         .add_plugin(EasingsPlugin)
-        .add_plugin(GamePlugin)
-        .run();
+        .add_plugin(GamePlugin);
+
+    match params.scenario {
+        Scenario::Arena => app.add_plugin(ArenaScenario),
+        Scenario::Cave => app.add_plugin(CaveScenario),
+    };
+
+    app.run();
 }
 
 pub struct GamePlugin;
@@ -51,15 +85,8 @@ impl Plugin for GamePlugin {
             .add_plugin(IntentionPlugin)
             .add_plugin(GameRenderPlugin)
             .add_plugin(UIPlugin)
-            .add_system(bevy::input::system::exit_on_esc_system)
-            .add_startup_system(setup);
+            .add_system(bevy::input::system::exit_on_esc_system);
     }
-}
-
-fn setup(mut commands: Commands, mut turn_queue: ResMut<TurnQueue>) {
-    let map = DrunkardsWalk::example().generate_map();
-
-    spawn_map_entities(&mut commands, &mut turn_queue, &map);
 }
 
 #[derive(Component)]
