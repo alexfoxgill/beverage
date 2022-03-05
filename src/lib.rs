@@ -51,8 +51,14 @@ impl Default for RunParams {
 
 #[wasm_bindgen]
 pub fn run_js(js: &JsValue) {
-    let params = js.into_serde().unwrap_or_default();
-    run(params)
+    let params = js.into_serde();
+    match params {
+        Ok(params) => run(params),
+        Err(e) => {
+            eprintln!("{e}");
+            run(Default::default())
+        }
+    }
 }
 
 pub fn run(params: RunParams) {
