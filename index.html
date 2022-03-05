@@ -8,7 +8,7 @@
   <script type="module">
     import init from "./beverage.js";
     init("./beverage_bg.wasm").then(function (wasm) {
-      wasm.run_js({ 'scenario': { 'Cave': {} } });
+      wasm.run_js({ 'scenario': 'Cave' });
     });
   </script>
 </body>
