@@ -45,3 +45,14 @@ jobs:
           destination_folder: demo
           user_email: email@alexfoxgill.com
           user_name: alexfoxgill
+
+      - name: Copy assets to alexfoxgil.github.io
+        uses: dmnemec/copy_file_to_another_repo_action@main
+        env:
+          API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
+        with:
+          destination_repo: alexfoxgill/alexfoxgill.github.io
+          source_file: ${{ github.workspace }}/assets
+          destination_folder: demo
+          user_email: email@alexfoxgill.com
+          user_name: alexfoxgill
