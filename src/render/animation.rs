@@ -14,24 +14,21 @@ pub struct AnimationPlugin;
 
 impl Plugin for AnimationPlugin {
     fn build(&self, app: &mut App) {
-        app.add_state(AnimatingState::Still).add_stage_after(
+        app.add_stage_after(
             TurnStage::Action,
             "ActionAnimationStage",
-            SystemStage::parallel()
-                .with_system(initiate_animation)
-                .with_system(update_animating_state),
+            SystemStage::parallel().with_system(initiate_animation),
+        )
+        .add_stage_after(
+            TurnStage::Effects,
+            "TurnStateStage",
+            SystemStage::parallel().with_system(pause_turn_state),
         );
     }
 }
 
 #[derive(Component)]
 pub struct Animating(Timer);
-
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub enum AnimatingState {
-    Animating,
-    Still,
-}
 
 pub fn initiate_animation(
     mut commands: Commands,
@@ -75,13 +72,12 @@ pub fn initiate_animation(
     }
 }
 
-pub fn update_animating_state(
+pub fn pause_turn_state(
     mut commands: Commands,
     time: Res<Time>,
-    mut state: ResMut<State<AnimatingState>>,
+    mut state: ResMut<TurnState>,
     mut query: Query<(&mut Animating, Entity)>,
 ) {
-    let current_state = state.current();
     let mut is_animating = false;
     for (mut anim, e) in query.iter_mut() {
         anim.0.tick(time.delta());
@@ -93,13 +89,9 @@ pub fn update_animating_state(
         }
     }
 
-    match (is_animating, current_state) {
-        (true, AnimatingState::Still) => {
-            state.set(AnimatingState::Animating).unwrap();
-        }
-        (false, AnimatingState::Animating) => {
-            state.set(AnimatingState::Still).unwrap();
-        }
-        _ => (),
+    if is_animating {
+        *state = TurnState::Paused;
+    } else {
+        *state = TurnState::Idle;
     }
 }

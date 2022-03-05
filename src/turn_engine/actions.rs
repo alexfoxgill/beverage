@@ -79,6 +79,10 @@ impl ActionQueue {
         self.0.push_back(action.into());
         cost
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
 }
 
 pub type ActionResult = Result<EffectQueue, AnyActionError>;

@@ -177,6 +177,7 @@ impl Stage for EffectExecutor {
             if let TurnState::Executing { effects, .. } = state.as_mut() {
                 world.resource_scope(|world, mut systems: Mut<TurnSystems>| loop {
                     if let Some(effect) = effects.pop() {
+                        println!("Running effect {effect:?}");
                         systems.run_effect_system(effect, world);
                     } else {
                         break;
