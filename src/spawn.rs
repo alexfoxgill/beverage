@@ -6,6 +6,7 @@ use crate::domain::vision::VisionType;
 use crate::intention::PlayerControlled;
 use crate::map::*;
 use crate::maths::RADIANS_120DEG;
+use crate::maths::RADIANS_60DEG;
 use crate::render::actor::render_enemy;
 use crate::render::actor::render_player;
 use crate::render::map::tile_render_bundle;
@@ -41,6 +42,7 @@ struct AiBundle {
     #[bundle]
     actor: ActorBundle,
 
+    vision: Vision,
     ai: AIBehaviour,
     player_vis: PlayerVisibility,
 }
@@ -158,6 +160,11 @@ fn new_enemy(coord: Coordinate, ai: AIBehaviour) -> AiBundle {
         actions_remaining: 2,
     };
 
+    let vision = VisionType::Radial(5)
+        .and(VisionType::Conical(RADIANS_60DEG))
+        .or(VisionType::Radial(1))
+        .and(VisionType::Obstructable);
+
     AiBundle {
         actor: ActorBundle {
             facing,
@@ -165,6 +172,7 @@ fn new_enemy(coord: Coordinate, ai: AIBehaviour) -> AiBundle {
             shape,
             actor,
         },
+        vision: Vision::new(vision),
         ai,
         player_vis: PlayerVisibility::new_transient(),
     }
