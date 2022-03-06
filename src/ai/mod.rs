@@ -1,3 +1,5 @@
+pub mod ai_vision;
+
 use bevy::prelude::*;
 
 use hex2d::*;
@@ -9,18 +11,20 @@ use crate::domain::actions::step::StepAction;
 use crate::domain::actions::strike::StrikeAction;
 use crate::domain::common::*;
 use crate::domain::turn_queue::TurnQueue;
-use crate::domain::vision::Vision;
 use crate::map::MapTiles;
 use crate::pathfinding::{a_star, Move};
 use crate::turn_engine::actions::ActionQueue;
 use crate::turn_engine::TurnState;
 use crate::Player;
 
+use self::ai_vision::{update_can_see_player, CanSeePlayer};
+
 pub struct AiPlugin;
 
 impl Plugin for AiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(generate_ai_actions);
+        app.add_system(update_can_see_player.label("update_can_see_player"))
+            .add_system(generate_ai_actions.after("update_can_see_player"));
     }
 }
 
@@ -32,8 +36,15 @@ pub enum AIBehaviour {
 
 pub fn generate_ai_actions(
     turn_state: Res<TurnState>,
-    mut ai: Query<(&HexPos, &Facing, &Actor, &Vision, &mut AIBehaviour)>,
-    targets: Query<(&HexPos, Entity), With<Player>>,
+    mut ai: Query<(
+        &HexPos,
+        &Facing,
+        &Actor,
+        Option<&CanSeePlayer>,
+        &mut AIBehaviour,
+    )>,
+    player: Query<Entity, With<Player>>,
+    targets: Query<&HexPos>,
     map: MapTiles,
     turn_queue: Res<TurnQueue>,
     mut actions: ResMut<ActionQueue>,
@@ -43,28 +54,20 @@ pub fn generate_ai_actions(
     }
     if let &TurnState::Idle = turn_state.as_ref() {
         if let Some(&entity) = turn_queue.head() {
-            if let Ok((&HexPos(pos), &Facing(facing), actor, vision, mut behaviour)) =
+            if let Ok((&HexPos(pos), &Facing(facing), actor, can_see_player, mut behaviour)) =
                 ai.get_mut(entity)
             {
                 if actor.actions_remaining == 0 {
                     return;
                 }
 
-                let walls = map.get_walls();
                 let position = hex2d::Position::new(pos, facing);
                 match *behaviour {
                     AIBehaviour::Wandering => {
-                        let target = targets.iter().find_map(|(HexPos(target_pos), target)| {
-                            if vision
-                                .can_see_relative(position, *target_pos, |x| walls.contains(&x))
-                            {
-                                Some(target)
-                            } else {
-                                None
+                        if can_see_player.is_some() {
+                            if let Ok(target) = player.get_single() {
+                                *behaviour = AIBehaviour::Chasing(target);
                             }
-                        });
-                        if let Some(target) = target {
-                            *behaviour = AIBehaviour::Chasing(target)
                         } else {
                             let rotation =
                                 Angle::from_int::<i32>(rand::thread_rng().gen_range(1..=6));
@@ -75,7 +78,7 @@ pub fn generate_ai_actions(
                         }
                     }
                     AIBehaviour::Chasing(target) => {
-                        if let Ok((&HexPos(target_pos), _)) = targets.get(target) {
+                        if let Ok(&HexPos(target_pos)) = targets.get(target) {
                             let valid_tiles = map.get_floor();
 
                             if let Some(mut path) =
@@ -108,10 +111,10 @@ pub fn generate_ai_actions(
                                 }
                                 actions.push(EndTurnAction::new(entity));
                             } else {
-                                *behaviour = AIBehaviour::Wandering
+                                *behaviour = AIBehaviour::Wandering;
                             }
                         } else {
-                            *behaviour = AIBehaviour::Wandering
+                            *behaviour = AIBehaviour::Wandering;
                         }
                     }
                 }
