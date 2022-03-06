@@ -89,7 +89,7 @@ pub fn render_enemy(pos: &HexPos, facing: &Facing) -> ShapeBundle {
         })
         .build(
             DrawMode::Outlined {
-                fill_mode: FillMode::color(Color::RED),
+                fill_mode: FillMode::color(Color::YELLOW),
                 outline_mode: StrokeMode::new(Color::BLACK, 1.0),
             },
             transform(pos, facing),
