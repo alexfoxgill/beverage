@@ -1,6 +1,5 @@
 use bevy::prelude::*;
 
-use bevy::utils::HashSet;
 use hex2d::*;
 use rand::prelude::*;
 
@@ -11,7 +10,7 @@ use crate::domain::actions::strike::StrikeAction;
 use crate::domain::common::*;
 use crate::domain::turn_queue::TurnQueue;
 use crate::domain::vision::Vision;
-use crate::map::{MapTile, Terrain};
+use crate::map::MapTiles;
 use crate::pathfinding::{a_star, Move};
 use crate::turn_engine::actions::ActionQueue;
 use crate::turn_engine::TurnState;
@@ -35,7 +34,7 @@ pub fn generate_ai_actions(
     turn_state: Res<TurnState>,
     mut ai: Query<(&HexPos, &Facing, &Actor, &Vision, &mut AIBehaviour)>,
     targets: Query<(&HexPos, Entity), With<Player>>,
-    map: Query<(&HexPos, &MapTile)>,
+    map: MapTiles,
     turn_queue: Res<TurnQueue>,
     mut actions: ResMut<ActionQueue>,
 ) {
@@ -51,16 +50,7 @@ pub fn generate_ai_actions(
                     return;
                 }
 
-                let walls: HashSet<Coordinate> = map
-                    .iter()
-                    .filter_map(|(c, t)| {
-                        if t.terrain == Terrain::Wall {
-                            Some(c.0)
-                        } else {
-                            None
-                        }
-                    })
-                    .collect();
+                let walls = map.get_walls();
                 let position = hex2d::Position::new(pos, facing);
                 match *behaviour {
                     AIBehaviour::Wandering => {
@@ -86,16 +76,7 @@ pub fn generate_ai_actions(
                     }
                     AIBehaviour::Chasing(target) => {
                         if let Ok((&HexPos(target_pos), _)) = targets.get(target) {
-                            let valid_tiles: HashSet<Coordinate> = map
-                                .iter()
-                                .filter_map(|(x, t)| {
-                                    if t.terrain == Terrain::Floor {
-                                        Some(x.0)
-                                    } else {
-                                        None
-                                    }
-                                })
-                                .collect();
+                            let valid_tiles = map.get_floor();
 
                             if let Some(mut path) =
                                 a_star(position, target_pos, |x| valid_tiles.contains(x))

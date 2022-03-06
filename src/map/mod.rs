@@ -3,6 +3,7 @@ use bevy::{
     utils::{HashMap, HashSet},
 };
 
+use bevy_ecs::system::SystemParam;
 use hex2d::{Direction as HexDirection, *};
 use itertools::iterate;
 use rand::prelude::*;
@@ -43,6 +44,38 @@ impl MapCell {
         MapCell {
             terrain: Terrain::Floor,
         }
+    }
+}
+
+#[derive(SystemParam)]
+pub struct MapTiles<'w, 's> {
+    query: Query<'w, 's, (&'static HexPos, &'static MapTile)>,
+}
+impl<'w, 's> MapTiles<'w, 's> {
+    pub fn get_walls(&self) -> HashSet<Coordinate> {
+        self.query
+            .iter()
+            .filter_map(|(c, t)| {
+                if t.terrain == Terrain::Wall {
+                    Some(c.0)
+                } else {
+                    None
+                }
+            })
+            .collect()
+    }
+
+    pub fn get_floor(&self) -> HashSet<Coordinate> {
+        self.query
+            .iter()
+            .filter_map(|(x, t)| {
+                if t.terrain == Terrain::Floor {
+                    Some(x.0)
+                } else {
+                    None
+                }
+            })
+            .collect()
     }
 }
 
